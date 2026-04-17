@@ -11,10 +11,14 @@
         <div class="flex-1 flex items-center justify-center gap-8 bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner w-full md:w-auto">
           <div class="text-center">
             <p class="text-sm text-indigo-400 font-bold uppercase mb-2 tracking-widest">🌍 全球總資產淨值 (TWD)</p>
-            <p class="text-5xl lg:text-6xl font-mono-data font-black text-indigo-400 drop-shadow-md">NT$ {{ totalAssetTWD.toLocaleString() }}</p>
+            <p class="text-5xl lg:text-6xl font-mono-data font-black text-indigo-400 drop-shadow-md">NT$ {{ formatAmount(totalAssetTWD) }}</p>
           </div>
         </div>
-        
+        <button @click="isPrivateMode = !isPrivateMode" 
+        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 transition-all text-xs font-bold uppercase tracking-widest text-slate-400">
+          <span v-if="isPrivateMode">👁️ 顯示金額</span>
+          <span v-else>🔒 隱藏金額</span>
+        </button>
         <div class="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-white/5 justify-end">
           <div>
             <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">美金換匯成本</label>
@@ -66,11 +70,11 @@
               <div class="text-right">
                 <div v-if="item.type === 'BUY'" class="text-emerald-400">
                   <p class="text-xs font-bold uppercase opacity-90 mb-1">買進 (BUY)</p>
-                  <p class="text-xl font-mono-data font-black">+{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ Math.round(item.gapNative).toLocaleString() }}</p>
+                  <p class="text-xl font-mono-data font-black">+{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ formatAmount(item.gapNative).toLocaleString() }}</p>
                 </div>
                 <div v-else-if="item.type === 'SELL'" class="text-rose-400">
                   <p class="text-xs font-bold uppercase opacity-90 mb-1">賣出 (SELL)</p>
-                  <p class="text-xl font-mono-data font-black">-{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ Math.round(Math.abs(item.gapNative)).toLocaleString() }}</p>
+                  <p class="text-xl font-mono-data font-black">-{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ formatAmount(Math.abs(item.gapNative)).toLocaleString() }}</p>
                 </div>
                 <div v-else class="text-slate-500 italic text-sm">HOLD</div>
               </div>
@@ -141,6 +145,7 @@
 export default {
   data() {
     return {
+      isPrivateMode: false, // 預設不開啟隱私模式
       thresholdTWD: 10000, 
       fx: { buyRate: 31.5, currentRate: 32.0 },
       usdCash: { name: '美金現金', currency: 'USD', current: 0, target: 0 },
@@ -271,6 +276,12 @@ export default {
         // 計算偏離率：(實際-目標) / 目標
         const deviation = Math.abs(currentPct - targetPct) / targetPct;
         return deviation > 0.1; // 超過 10% 就亮紅燈
+      },// <--- 這裡也要加逗號，因為後面還有 save() 等方法
+      formatAmount(val) {
+      if (this.isPrivateMode) return '****'; // 隱私模式下直接顯示星號
+      
+      // 原本的格式化邏輯（千分位）
+      return new Intl.NumberFormat('en-US').format(Math.round(val));
       },
     save() { 
       localStorage.setItem('portfolio_v8_public_template', JSON.stringify({ 
