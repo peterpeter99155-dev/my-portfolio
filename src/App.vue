@@ -256,13 +256,22 @@ export default {
       });
       if(this.getTWDValue(this.usdCash) > 0) data.push({ value: this.getTWDValue(this.usdCash), name: 'USD 現金', itemStyle: { color: '#0ea5e9' } });
       if(this.getTWDValue(this.twdCash) > 0) data.push({ value: this.getTWDValue(this.twdCash), name: 'TWD 現金', itemStyle: { color: '#10b981' } });
-      
       this._chart.setOption({ 
         tooltip: { trigger: 'item', formatter: '{b}<br/>NT$ {c} ({d}%)' }, 
         series: [{ type: 'pie', radius: ['35%', '60%'], label: { show: true, formatter: '{name|{b}}\n{perc|{d}%}', rich: { name: { color: '#f1f5f9', fontSize: 11, fontWeight: 'bold' }, perc: { color: '#94a3b8', fontSize: 10 } } }, data }] 
       });
       this.save();
     },
+    // 判斷資產是否偏離目標過遠
+      isDeviated(item) {
+        const currentPct = (this.getTWDValue(item) / this.totalAssetTWD) * 100;
+        const targetPct = parseFloat(item.target) || 0;
+        if (targetPct === 0) return false;
+        
+        // 計算偏離率：(實際-目標) / 目標
+        const deviation = Math.abs(currentPct - targetPct) / targetPct;
+        return deviation > 0.1; // 超過 10% 就亮紅燈
+      },
     save() { 
       localStorage.setItem('portfolio_v8_public_template', JSON.stringify({ 
         fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
