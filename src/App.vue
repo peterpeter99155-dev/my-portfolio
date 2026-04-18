@@ -243,7 +243,10 @@
         <section v-else key="tab-dashboard">
           <StockDashboard
             :positions="dashboardPositions"
+            :dictionary="dictionary"
             :fx="fx"
+            :display-currency="displayCurrency"
+            @update:displayCurrency="displayCurrency = $event"
             :is-private-mode="isPrivateMode"
             :active="currentTab === 'dashboard'"
             @positions-updated="handleDashboardPositionsUpdated"
@@ -263,7 +266,7 @@ export default {
   },
   data() {
     return {
-      currentTab: 'rebalancing',
+      currentTab: 'dashboard',
       displayCurrency: 'TWD', // 全局計價幣別
       isPrivateMode: false, // 預設不開啟隱私模式
       heroAssetFontPx: 52, // 主標金額字級（px），由 fitHeroAssetAmount 依容器寬度調整
@@ -609,7 +612,7 @@ export default {
      * 將當前資產狀態儲存至 localStorage
      */
     save() { 
-      localStorage.setItem('portfolio_v8_public_template', JSON.stringify({ 
+      localStorage.setItem('portfolio_v9_clean', JSON.stringify({ 
         fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
         coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})), 
         satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})),
@@ -631,8 +634,8 @@ export default {
       this.updateChart();
     }
   },
-  mounted() {
-    const saved = localStorage.getItem('portfolio_v8_public_template');
+  created() {
+    const saved = localStorage.getItem('portfolio_v9_clean');
     if(saved) { 
       try { 
         const p = JSON.parse(saved); 
@@ -649,6 +652,8 @@ export default {
       } catch(e) {} 
     }
     this.normalizePortfolioRows()
+  },
+  mounted() {
     this.$nextTick(() => { 
       setTimeout(() => { 
         this.initChart(); 

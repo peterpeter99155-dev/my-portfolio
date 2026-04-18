@@ -1,38 +1,62 @@
 <template>
-  <div class="space-y-5">
-    <header class="bg-slate-900 rounded-2xl border-2 border-slate-800 p-4 md:p-5 shadow-xl">
-      <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 class="text-lg md:text-xl font-black text-white tracking-wide">股票統整室</h2>
-          <p class="text-sm text-slate-400 mt-1">持股損益儀表板（含匯率影響）</p>
+  <div class="space-y-5" @click="closeSearch">
+    <div class="flex items-center justify-end">
+      <div class="flex items-center gap-2">
+        <div class="flex bg-slate-800/80 rounded-md p-0.5 border border-slate-700">
+          <button @click="$emit('update:displayCurrency', 'TWD')" :class="displayCurrency === 'TWD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">台幣</button>
+          <button @click="$emit('update:displayCurrency', 'USD')" :class="displayCurrency === 'USD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">美金</button>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <button
-            @click="refreshAll(true)"
-            :disabled="isRefreshing"
-            class="px-3 py-2 rounded-lg text-xs font-bold tracking-wide transition-colors border"
-            :class="isRefreshing ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/35'"
-          >
-            {{ isRefreshing ? '更新中...' : 'Refresh All' }}
-          </button>
-        </div>
+        <button
+          @click="refreshAll(true)"
+          :disabled="isRefreshing"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors border"
+          :class="isRefreshing ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/35'"
+        >
+          <svg v-if="!isRefreshing" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <svg v-else class="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ isRefreshing ? '更新中...' : '刷新' }}</span>
+        </button>
       </div>
-      <div class="mt-3 text-xs text-slate-400">
-        <span v-if="lastRefreshAt">最後更新：{{ formatDateTime(lastRefreshAt) }}</span>
-        <span v-else>尚未抓取即時報價</span>
-      </div>
-    </header>
+    </div>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+        <p class="text-xs text-slate-400 font-bold mb-1">總投資成本</p>
+        <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalCostDisplay) }}</p>
+      </article>
+      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+        <p class="text-xs text-slate-400 font-bold mb-1">目前總市值</p>
+        <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalMarketDisplay) }}</p>
+      </article>
+      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
+        <p class="text-xs text-slate-400 font-bold mb-1">總損益百分比</p>
+        <p :class="profitClass(summary.totalProfitTwd)" class="text-2xl font-black font-mono-data">
+          {{ summary.profitPct >= 0 ? '+' : '' }}{{ summary.profitPct.toFixed(2) }}%
+        </p>
+      </article>
+    </section>
 
     <section class="bg-slate-900 rounded-xl border border-slate-800 p-4">
       <h3 class="text-sm font-black text-slate-200 mb-3">新增標的</h3>
       <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-        <label class="col-span-2 md:col-span-2">
+        <label class="col-span-2 md:col-span-2 relative">
           <span class="block text-[11px] text-slate-400 mb-1 font-bold">股票代號</span>
           <input
             v-model.trim="newStock.symbol"
-            class="w-full rounded-lg bg-slate-200 text-slate-900 px-3 py-2 text-sm font-bold"
+            @input="onSearchInput"
+            @focus="showSearch = true"
+            @click.stop
+            class="w-full rounded-lg bg-slate-200 text-slate-900 px-3 py-2 text-sm font-bold uppercase"
             placeholder="例：SPY、2330"
           />
+          <ul v-if="showSearch && filteredDict.length > 0" class="absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-md shadow-2xl top-[100%] mt-1 max-h-48 overflow-y-auto custom-scrollbar">
+            <li v-for="d in filteredDict" :key="d" @mousedown.prevent="selectStock(d)" class="p-2 hover:bg-indigo-600 cursor-pointer text-xs font-bold text-slate-200 border-b border-slate-700 last:border-0 truncate">{{ d }}</li>
+          </ul>
         </label>
         <label>
           <span class="block text-[11px] text-slate-400 mb-1 font-bold">持有股數</span>
@@ -75,23 +99,6 @@
       </div>
     </section>
 
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4">
-        <p class="text-xs text-slate-400 font-bold mb-1">總投資成本</p>
-        <p class="text-2xl font-black text-slate-100 font-mono-data">NT$ {{ formatNumber(summary.totalCostTwd) }}</p>
-      </article>
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4">
-        <p class="text-xs text-slate-400 font-bold mb-1">目前總市值</p>
-        <p class="text-2xl font-black text-slate-100 font-mono-data">NT$ {{ formatNumber(summary.totalMarketTwd) }}</p>
-      </article>
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4">
-        <p class="text-xs text-slate-400 font-bold mb-1">總損益百分比</p>
-        <p :class="profitClass(summary.totalProfitTwd)" class="text-2xl font-black font-mono-data">
-          {{ summary.profitPct >= 0 ? '+' : '' }}{{ summary.profitPct.toFixed(2) }}%
-        </p>
-      </article>
-    </section>
-
     <section v-if="isRefreshing" class="space-y-2">
       <article v-for="n in skeletonCount" :key="'skeleton-' + n" class="bg-slate-900 rounded-xl border border-slate-800 p-3">
         <div class="flex items-center gap-3">
@@ -102,51 +109,69 @@
       </article>
     </section>
 
-    <section v-else class="space-y-2">
-      <p class="text-[11px] text-slate-400 px-1">提示：向左滑動清單列或點右側 `✕` 可刪除標的。</p>
+    <section v-else class="space-y-0 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg shadow-black/10">
+      <p class="text-[11px] text-slate-400 px-3 py-2 border-b border-slate-800 bg-slate-950/50">提示：點擊右側垃圾桶可刪除標的。</p>
       <article
         v-for="item in dashboardRows"
         :key="item.key"
-        class="bg-slate-900 rounded-xl border border-slate-800 px-3 py-3 shadow-lg shadow-black/10"
+        class="border-b border-slate-800/80 py-2.5 px-3 hover:bg-slate-800/40 transition-colors last:border-0"
         @touchstart="handleTouchStart($event)"
         @touchend="handleTouchEnd($event, item.index)"
       >
-        <div class="flex items-center gap-2 md:gap-4">
-          <div class="basis-[36%] min-w-0">
-            <p class="font-black text-base md:text-lg text-white truncate">{{ item.symbol }}</p>
-            <p class="text-[11px] text-slate-400">{{ formatShares(item.shares) }} 股</p>
+        <div class="flex items-center w-full gap-1">
+          <!-- 左欄：股票代碼與股數 -->
+          <div class="flex-1 min-w-0">
+            <p class="text-lg font-bold text-white truncate leading-tight">{{ item.symbol }}</p>
+            <p class="text-sm text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">{{ formatShares(item.shares) }} 股</p>
           </div>
-          <div class="basis-[32%] min-w-0">
-            <p class="font-mono-data tabular-nums text-sm md:text-base font-black text-slate-100 truncate">
-              {{ item.currencySymbol }} {{ formatNumber(item.currentPrice) }}
-            </p>
-            <p class="text-[11px] text-slate-400 font-mono-data tabular-nums truncate">
-              成本 {{ item.currencySymbol }} {{ formatNumber(item.costPrice) }}
-            </p>
+
+          <!-- 中欄：真實現價與成本 -->
+          <div class="flex-1 min-w-0 text-center">
+            <div v-if="item.currentPrice === null" class="flex flex-col items-center gap-1.5 py-1">
+              <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
+              <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
+            </div>
+            <template v-else>
+              <p class="text-base font-mono-data tabular-nums font-medium text-white truncate leading-tight">
+                {{ item.currencySymbol }}{{ formatNumber(item.currentPrice) }}
+              </p>
+              <p class="text-sm text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">
+                {{ item.currencySymbol }}{{ formatNumber(item.costPrice) }}
+              </p>
+            </template>
           </div>
-          <div class="basis-[32%] min-w-0 text-right">
-            <p class="font-mono-data tabular-nums text-sm md:text-base font-black" :class="profitClass(item.totalPnlTwd)">
-              {{ item.totalPnlTwd >= 0 ? '+' : '' }}{{ item.currencySymbol }} {{ formatNumber(item.totalPnlDisplay) }}
-            </p>
-            <p class="text-[11px] font-mono-data tabular-nums" :class="profitClass(item.totalPnlTwd)">
-              {{ item.pnlPct >= 0 ? '+' : '' }}{{ item.pnlPct.toFixed(2) }}%
-            </p>
+
+          <!-- 右欄：損益金額、百分比、匯率貢獻 -->
+          <div class="flex-1 min-w-0 text-right flex flex-col justify-center pr-1">
+            <div v-if="item.currentPrice === null" class="flex flex-col items-end gap-1.5 py-1">
+              <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
+              <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
+            </div>
+            <template v-else>
+              <p class="text-base font-mono-data tabular-nums font-bold truncate leading-tight" :class="profitClass(item.totalPnlTwd)">
+                {{ item.totalPnlTwd >= 0 ? '+' : '' }}{{ formatNumber(item.totalPnlDisplay) }}
+              </p>
+              <p class="text-sm font-mono-data tabular-nums font-bold truncate" :class="profitClass(item.totalPnlTwd)">
+                {{ item.pnlPct >= 0 ? '+' : '' }}{{ item.pnlPct.toFixed(2) }}%
+              </p>
+              <p class="text-[10px] text-slate-500 font-mono-data tabular-nums mt-0.5 truncate">
+                匯差 {{ item.fxContributionTwd >= 0 ? '+' : '' }}{{ formatNumber(item.fxContributionTwd) }}
+              </p>
+            </template>
           </div>
-          <div class="shrink-0">
+
+          <!-- 極簡垃圾桶 Icon -->
+          <div class="shrink-0 pl-1">
             <button
               @click="removePosition(item.index)"
-              class="h-7 w-7 rounded-full border border-slate-700 text-slate-400 hover:text-rose-400 hover:border-rose-500/50 transition-colors font-black"
+              class="text-slate-600 hover:text-red-500 transition-colors p-1"
               title="刪除標的"
             >
-              ✕
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
-        </div>
-        <div class="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px]">
-          <span class="text-slate-400">匯率貢獻</span>
-          <span class="font-mono-data tabular-nums" :class="profitClass(item.fxContributionTwd)">
-            {{ item.fxContributionTwd >= 0 ? '+' : '' }}NT$ {{ formatNumber(item.fxContributionTwd) }}
-          </span>
         </div>
       </article>
     </section>
@@ -157,11 +182,13 @@
 export default {
   props: {
     positions: { type: Array, required: true },
+    dictionary: { type: Array, default: () => [] },
     fx: { type: Object, required: true },
+    displayCurrency: { type: String, default: 'TWD' },
     isPrivateMode: { type: Boolean, default: false },
     active: { type: Boolean, default: false },
   },
-  emits: ['positions-updated'],
+  emits: ['positions-updated', 'update:displayCurrency'],
   data() {
     return {
       isRefreshing: false,
@@ -169,6 +196,7 @@ export default {
       staleMs: 5 * 60 * 1000,
       touchStartX: 0,
       localPositions: [],
+      showSearch: false,
       newStock: {
         symbol: '',
         shares: 1,
@@ -190,7 +218,7 @@ export default {
         const cost = parseFloat(item.cost) || 0
         const shares = Math.max(parseFloat(item.shares) || 1, 1)
         const isUsd = item.currency === 'USD'
-        const currentPrice = Number.isFinite(item.lastPrice) ? item.lastPrice : (current / shares)
+        const currentPrice = Number.isFinite(item.lastPrice) && item.lastPrice !== null ? item.lastPrice : null
         const costPrice = cost / shares
         const totalPnlTwd = isUsd
           ? current * this.fx.currentRate - cost * this.fx.buyRate
@@ -201,7 +229,7 @@ export default {
         return {
           key: `${item.name}-${idx}`,
           index: idx,
-          symbol: this.extractSymbolFromText(item.name) || item.name,
+          symbol: item.name,
           currency: item.currency,
           currencySymbol: isUsd ? '$' : 'NT$',
           shares,
@@ -225,7 +253,24 @@ export default {
       }, 0)
       const totalProfitTwd = totalMarketTwd - totalCostTwd
       const profitPct = totalCostTwd > 0 ? (totalProfitTwd / totalCostTwd) * 100 : 0
-      return { totalCostTwd, totalMarketTwd, totalProfitTwd, profitPct }
+      
+      const totalCostDisplay = this.displayCurrency === 'USD' ? totalCostTwd / this.fx.currentRate : totalCostTwd
+      const totalMarketDisplay = this.displayCurrency === 'USD' ? totalMarketTwd / this.fx.currentRate : totalMarketTwd
+      
+      return { totalCostTwd, totalMarketTwd, totalProfitTwd, profitPct, totalCostDisplay, totalMarketDisplay }
+    },
+    filteredDict() {
+      const q = this.newStock.symbol;
+      if(!q) return [];
+      const search = q.toUpperCase();
+      return this.dictionary
+        .filter(d => d.toUpperCase().includes(search))
+        .sort((a, b) => {
+          const aStart = a.toUpperCase().startsWith(search) ? 0 : 1;
+          const bStart = b.toUpperCase().startsWith(search) ? 0 : 1;
+          return aStart - bStart;
+        })
+        .slice(0, 12);
     },
   },
   watch: {
@@ -257,7 +302,8 @@ export default {
     },
     formatNumber(v) {
       if (this.isPrivateMode) return '****'
-      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(v || 0)
+      if (v === null || v === undefined || !Number.isFinite(v)) return '-'
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(v)
     },
     formatShares(v) {
       if (this.isPrivateMode) return '****'
@@ -268,6 +314,26 @@ export default {
     },
     emitPositionsUpdated() {
       this.$emit('positions-updated', this.localPositions.map((item) => ({ ...item })))
+    },
+    closeSearch() {
+      this.showSearch = false;
+    },
+    autoDetectCurrency() {
+      if (!this.newStock.symbol) return;
+      if (/^\d/.test(this.newStock.symbol.trim())) {
+        this.newStock.currency = 'TWD';
+      } else {
+        this.newStock.currency = 'USD';
+      }
+    },
+    onSearchInput() {
+      this.showSearch = true;
+      this.autoDetectCurrency();
+    },
+    selectStock(name) {
+      this.newStock.symbol = name;
+      this.showSearch = false;
+      this.autoDetectCurrency();
     },
     extractSymbolFromText(text) {
       if (!text) return ''
@@ -292,19 +358,23 @@ export default {
           const endpoint = `/api/yahoo/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?interval=1m&range=1d`
           const res = await fetch(endpoint)
           if (!res.ok) {
-            console.warn(`[StockDashboard] 請求失敗 (${res.status}):`, yahooSymbol)
+            console.error(`[API 失敗] 請求失敗 (${res.status}): ${yahooSymbol}`)
             continue
           }
           const payload = await res.json()
           const result = payload?.chart?.result?.[0]
           const regularMarketPrice = result?.meta?.regularMarketPrice
           const closes = result?.indicators?.quote?.[0]?.close || []
-          const latestClose = [...closes].reverse().find((v) => Number.isFinite(v))
-          const latestPrice = Number.isFinite(regularMarketPrice) ? regularMarketPrice : latestClose
-          if (Number.isFinite(latestPrice)) return Number(latestPrice)
-          console.warn('[StockDashboard] 回傳資料缺少價格:', yahooSymbol, payload)
-        } catch (err) {
-          console.warn('[StockDashboard] 抓取報價失敗:', yahooSymbol, err)
+          const validCloses = closes.filter((c) => c !== null && c !== undefined)
+          const finalPrice = validCloses.length > 0 ? validCloses[validCloses.length - 1] : regularMarketPrice
+          
+          if (finalPrice !== undefined && finalPrice !== null) {
+            console.log(`[API 成功] 取得標的: ${yahooSymbol}, 價格: ${finalPrice}`)
+          }
+          
+          return finalPrice
+        } catch (error) {
+          console.error('[API 失敗]', error)
         }
       }
       return null
@@ -313,27 +383,47 @@ export default {
       if (!this.lastRefreshAt) return true
       return Date.now() - this.lastRefreshAt > this.staleMs
     },
-    addStock() {
+    async addStock() {
       try {
-        const symbol = this.extractSymbolFromText(this.newStock.symbol)
-        const shares = Math.max(parseFloat(this.newStock.shares) || 0, 1)
-        const costPrice = Math.max(parseFloat(this.newStock.costPrice) || 0, 0)
-        if (!symbol) {
+        const inputSymbol = this.newStock.symbol
+        const symbolStr = this.extractSymbolFromText(inputSymbol)
+        if (!symbolStr) {
           console.warn('[StockDashboard] 新增標的失敗：代號為空')
           return
         }
+
+        const shares = Math.max(parseFloat(this.newStock.shares) || 0, 1)
+        const costPrice = Math.max(parseFloat(this.newStock.costPrice) || 0, 0)
         const totalCost = Number((shares * costPrice).toFixed(2))
-        const row = {
-          name: symbol,
-          currency: this.newStock.currency,
-          shares,
-          cost: totalCost,
-          current: totalCost,
-          lastPrice: costPrice,
+
+        const existingIdx = this.localPositions.findIndex(
+          (r) => this.extractSymbolFromText(r.name) === symbolStr
+        )
+
+        if (existingIdx !== -1) {
+          const row = this.localPositions[existingIdx]
+          row.shares += shares
+          row.cost += totalCost
+          if (inputSymbol.length > row.name.length) {
+             row.name = inputSymbol
+          }
+        } else {
+          const row = {
+            name: inputSymbol,
+            currency: this.newStock.currency,
+            shares,
+            cost: totalCost,
+            current: totalCost,
+            lastPrice: null,
+          }
+          this.localPositions.unshift(row)
         }
-        this.localPositions.unshift(row)
+
         this.newStock = { symbol: '', shares: 1, costPrice: 0, currency: this.newStock.currency }
         this.emitPositionsUpdated()
+        
+        await this.refreshAll(true)
+
       } catch (err) {
         console.warn('[StockDashboard] 新增標的失敗:', err)
       }
@@ -354,14 +444,30 @@ export default {
       if (!force && !this.isStale()) return
       this.isRefreshing = true
       try {
-        await Promise.all(this.holdings.map(async (item) => {
-          const symbol = this.extractSymbolFromText(item.name)
-          if (!symbol) return
-          const latest = await this.fetchStockPrice(symbol, item.currency)
-          if (Number.isFinite(latest)) {
-            const shares = Math.max(parseFloat(item.shares) || 1, 1)
-            item.lastPrice = Number(latest.toFixed(4))
-            item.current = Number((latest * shares).toFixed(2))
+        const fetchTasks = this.holdings.map(item => ({
+          name: item.name,
+          symbol: this.extractSymbolFromText(item.name),
+          currency: item.currency
+        }))
+
+        await Promise.all(fetchTasks.map(async (task) => {
+          if (!task.symbol) return
+            // Set to null to explicitly show loading state during refresh
+            const target = this.localPositions.find(r => r.name === task.name)
+            if (target) {
+              target.lastPrice = null
+            }
+
+            const latest = await this.fetchStockPrice(task.symbol, task.currency)
+            if (Number.isFinite(latest)) {
+            // 在 API 回傳後，重新去 localPositions 找「當前最新的」對象
+            // 避免這段期間 localPositions 被 watcher 整包替換導致改到舊參考
+            const target = this.localPositions.find(r => r.name === task.name)
+            if (target) {
+              const shares = Math.max(parseFloat(target.shares) || 1, 1)
+              target.lastPrice = Number(latest.toFixed(4))
+              target.current = Number((latest * shares).toFixed(2))
+            }
           }
         }))
         this.lastRefreshAt = Date.now()
