@@ -6,4 +6,14 @@ export default defineConfig({
   // 這裡就是關鍵！告訴 Vite 你的 GitHub 儲存庫名稱
   base: '/my-portfolio/',
   plugins: [vue()],
+  server: {
+    proxy: {
+      '/api/yahoo': {
+        target: 'https://query1.finance.yahoo.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
+      },
+    },
+  },
 })
