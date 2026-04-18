@@ -2,35 +2,65 @@
   <div class="bg-slate-950 text-slate-100 p-4 md:p-8 font-sans min-h-screen">
     <div id="app" class="max-w-[1600px] mx-auto space-y-6" @click="closeAllSearch">
       
-      <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col xl:flex-row justify-between items-center gap-6">
-        <div class="text-center xl:text-left min-w-[280px]">
+      <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-6 shadow-lg grid grid-cols-1 gap-6 items-center justify-items-center xl:grid-cols-[auto_minmax(280px,1fr)_auto_auto] xl:justify-items-stretch xl:gap-5">
+        <div class="text-center xl:text-left w-full min-w-0">
           <h1 class="text-3xl lg:text-4xl font-black text-white tracking-tighter italic">資產戰略總部 <span class="text-indigo-500">v8.3</span></h1>
           <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mt-2">Global Asset Commander / 終極擴充圖鑑</p>
         </div>
 
-        <div class="flex-1 flex items-center justify-center gap-8 bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner w-full md:w-auto">
-          <div class="text-center">
-            <p class="text-sm text-indigo-400 font-bold uppercase mb-2 tracking-widest">🌍 全球總資產淨值 (TWD)</p>
-            <p class="text-5xl lg:text-6xl font-mono-data font-black text-indigo-400 drop-shadow-md">NT$ {{ formatAmount(totalAssetTWD) }}</p>
+        <div class="w-full max-w-full min-w-0 flex items-center justify-center bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner overflow-hidden xl:min-w-0">
+          <div class="text-center w-full max-w-full min-w-0 px-1">
+            <p class="text-sm text-indigo-400 font-bold uppercase mb-2 tracking-wide xl:tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">🌍 全球總資產淨值 (TWD)</p>
+            <div ref="assetAmountFitWrap" class="mx-auto flex w-full max-w-full justify-center overflow-hidden rounded-xl py-1">
+              <p
+                ref="assetAmountLine"
+                class="inline-flex max-w-full flex-nowrap items-baseline justify-center gap-x-2 whitespace-nowrap px-1 font-black font-mono tabular-nums leading-none tracking-tight text-indigo-400 drop-shadow-md transition-[font-size] duration-200 ease-out"
+                :class="{ 'select-none': isPrivateMode }"
+                :style="{ fontSize: heroAssetFontPx + 'px' }"
+              >
+                <span class="shrink-0 text-indigo-300/90">NT$</span>
+                <span
+                  class="shrink-0"
+                  :class="{ 'blur-md pointer-events-none rounded-sm': isPrivateMode }"
+                >{{ formatAmount(totalAssetTWD) }}</span>
+              </p>
+            </div>
           </div>
         </div>
-        <button @click="isPrivateMode = !isPrivateMode" 
-        class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 hover:bg-slate-800 transition-all text-xs font-bold uppercase tracking-widest text-slate-400">
-          <span v-if="isPrivateMode">👁️ 顯示金額</span>
-          <span v-else>🔒 隱藏金額</span>
+        <button
+          type="button"
+          :aria-pressed="isPrivateMode"
+          :aria-label="isPrivateMode ? '顯示金額' : '隱藏金額'"
+          @click.stop="isPrivateMode = !isPrivateMode"
+          class="group relative inline-flex w-max max-w-full shrink-0 justify-self-center items-center gap-2.5 overflow-hidden rounded-full border border-slate-600/70 bg-gradient-to-b from-slate-800/95 to-slate-900/95 px-1 py-1 pl-1 pr-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300 shadow-md shadow-black/20 ring-1 ring-white/5 transition-all hover:border-indigo-500/45 hover:text-white hover:shadow-lg hover:shadow-indigo-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 active:scale-[0.98]"
+        >
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-600/50 bg-slate-950/80 text-slate-400 transition-colors group-hover:border-indigo-500/35 group-hover:bg-indigo-950/50 group-hover:text-indigo-200"
+            aria-hidden="true"
+          >
+            <svg v-if="isPrivateMode" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg v-else class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </span>
+          <span class="pr-0.5">{{ isPrivateMode ? '顯示金額' : '隱藏金額' }}</span>
         </button>
         <div class="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-white/5 justify-end">
           <div>
             <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">美金換匯成本</label>
-            <input type="number" v-model.number="fx.buyRate" step="0.01" @input="save" class="w-20 input-pv rounded p-1 text-slate-300 font-bold text-sm text-center">
+            <input type="number" v-model.number="fx.buyRate" step="0.01" @input="save" class="w-20 input-pv rounded p-1 font-bold text-sm text-center">
           </div>
           <div>
             <label class="block text-[10px] text-indigo-400 font-bold mb-1 uppercase">市場即時匯率</label>
-            <input type="number" v-model.number="fx.currentRate" step="0.01" @input="updateChart" class="w-20 input-pv rounded p-1 text-indigo-400 font-bold text-sm text-center border-indigo-500/30">
+            <input type="number" v-model.number="fx.currentRate" step="0.01" @input="updateChart" class="w-20 input-pv input-pv--accent rounded p-1 font-bold text-sm text-center">
           </div>
           <div class="pl-3 border-l border-slate-700 text-right">
             <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">總匯差損益</label>
-            <div :class="fxProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-lg font-black font-mono-data">
+            <div :class="fxProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-lg font-black font-mono-data tabular-nums">
               {{ fxProfit >= 0 ? '+' : '' }}NT$ {{ fxProfit.toLocaleString() }}
             </div>
           </div>
@@ -94,11 +124,11 @@
         <div v-for="c in [usdCash, twdCash]" :key="c.currency" class="grid grid-cols-12 gap-4 p-4 bg-slate-900/30 border-b border-slate-800/50 items-center">
           <div class="col-span-5 flex gap-2">
             <span class="bg-slate-800 text-slate-400 font-bold px-3 py-2 rounded text-xs w-20 text-center border border-slate-700">{{ c.currency }}</span>
-            <input v-model="c.name" class="w-full input-pv rounded p-2.5 text-sm font-bold text-slate-300" disabled>
+            <input v-model="c.name" class="w-full input-pv input-pv--muted rounded p-2.5 text-sm font-bold" disabled>
           </div>
           <div class="col-span-3"><input type="number" v-model.number="c.current" @input="updateChart" class="w-full input-pv rounded p-2.5 font-mono-data text-right" placeholder="0"></div>
           <div class="col-span-3 flex items-center justify-end pr-4">
-            <input type="number" v-model.number="c.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-emerald-400 text-center" placeholder="0">
+            <input type="number" v-model.number="c.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-center" placeholder="0">
             <span class="bg-slate-800 px-3 py-2.5 text-slate-400 rounded-r border border-l-0 border-slate-700 text-sm">%</span>
           </div>
         </div>
@@ -110,7 +140,7 @@
           </div>
           <div v-for="(item, index) in (type === 'core' ? coreList : satelliteList)" :key="type+index" class="grid grid-cols-12 gap-4 p-4 border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors items-center">
             <div class="col-span-5 relative flex gap-2">
-              <select v-model="item.currency" @change="updateChart" class="input-pv rounded p-2 text-xs font-bold w-20 text-center cursor-pointer currency-toggle" :class="item.currency === 'USD' ? 'text-blue-400' : 'text-emerald-500'">
+              <select v-model="item.currency" @change="updateChart" class="input-pv rounded p-2 text-xs font-bold w-20 text-center cursor-pointer currency-toggle">
                 <option value="USD">USD</option>
                 <option value="TWD">TWD</option>
               </select>
@@ -123,7 +153,7 @@
             </div>
             <div class="col-span-3"><input type="number" v-model.number="item.current" @input="updateChart" class="w-full input-pv rounded p-2.5 font-mono-data text-right" placeholder="0"></div>
             <div class="col-span-3 flex items-center justify-end pr-4">
-              <input type="number" v-model.number="item.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-blue-400 text-center" placeholder="0">
+              <input type="number" v-model.number="item.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-center" placeholder="0">
               <span class="bg-slate-800 px-3 py-2.5 text-slate-400 rounded-r border border-l-0 border-slate-700 text-sm">%</span>
             </div>
             <div class="col-span-1 text-center"><button @click="removeRow(type, index)" class="text-slate-500 hover:text-rose-500 font-bold text-lg">✕</button></div>
@@ -131,7 +161,7 @@
         </div>
 
         <div class="grid grid-cols-12 gap-4 p-5 font-black font-mono-data text-xl border-t-4 border-slate-950 items-center" :class="isAllocationValid ? 'bg-indigo-900/40 text-indigo-400' : 'bg-rose-950/50 text-rose-400'">
-          <div class="col-span-8 text-right uppercase text-sm tracking-widest">Total Global Allocation :</div>
+          <div class="col-span-8 text-right text-sm tracking-wide font-bold">全球目標配置合計</div>
           <div class="col-span-3 text-right pr-4">{{ totalTargetPct }} %</div>
           <div class="col-span-1 text-center text-2xl">{{ isAllocationValid ? '✅' : '⚠️' }}</div>
         </div>
@@ -146,6 +176,10 @@ export default {
   data() {
     return {
       isPrivateMode: false, // 預設不開啟隱私模式
+      heroAssetFontPx: 52, // 主標金額字級（px），由 fitHeroAssetAmount 依容器寬度調整
+      _heroAssetFitRaf: null,
+      _heroAssetObserver: null,
+      _heroAssetOnResize: null,
       thresholdTWD: 10000, 
       fx: { buyRate: 31.5, currentRate: 32.0 },
       usdCash: { name: '美金現金', currency: 'USD', current: 0, target: 0 },
@@ -216,7 +250,46 @@ export default {
       }).sort((a, b) => a.type === 'BUY' ? -1 : 1);
     }
   },
+  watch: {
+    totalAssetTWD() {
+      this.scheduleFitHeroAssetAmount()
+    },
+    isPrivateMode() {
+      this.scheduleFitHeroAssetAmount()
+    }
+  },
   methods: {
+    scheduleFitHeroAssetAmount() {
+      if (this._heroAssetFitRaf != null) cancelAnimationFrame(this._heroAssetFitRaf)
+      this._heroAssetFitRaf = requestAnimationFrame(() => {
+        this._heroAssetFitRaf = null
+        this.fitHeroAssetAmount()
+      })
+    },
+    getHeroAssetFontMaxPx() {
+      // 約對應 text-5xl / text-6xl（無捲軸，必要時往下縮）
+      return window.matchMedia('(min-width: 1024px)').matches ? 60 : 48
+    },
+    fitHeroAssetAmount() {
+      const wrap = this.$refs.assetAmountFitWrap
+      const line = this.$refs.assetAmountLine
+      if (!wrap || !line) return
+      const maxPx = this.getHeroAssetFontMaxPx()
+      const minPx = 11
+      const maxW = Math.max(0, wrap.clientWidth - 4)
+      if (maxW <= 0) return
+
+      let chosen = minPx
+      for (let fs = maxPx; fs >= minPx; fs--) {
+        line.style.fontSize = `${fs}px`
+        if (line.scrollWidth <= maxW) {
+          chosen = fs
+          break
+        }
+      }
+      line.style.removeProperty('font-size')
+      this.heroAssetFontPx = chosen
+    },
     filteredDict(q) { 
   if(!q) return [];
   const search = q.toUpperCase();
@@ -305,13 +378,64 @@ export default {
       setTimeout(() => { 
         this.initChart(); 
         this.updateChart(); 
+        const wrap = this.$refs.assetAmountFitWrap
+        if (wrap && !this._heroAssetObserver) {
+          this._heroAssetObserver = new ResizeObserver(() => this.scheduleFitHeroAssetAmount())
+          this._heroAssetObserver.observe(wrap)
+        }
+        if (!this._heroAssetOnResize) {
+          this._heroAssetOnResize = () => this.scheduleFitHeroAssetAmount()
+          window.addEventListener('resize', this._heroAssetOnResize, { passive: true })
+        }
+        this.scheduleFitHeroAssetAmount()
       }, 50); 
     });
+  },
+  beforeUnmount() {
+    if (this._heroAssetObserver) {
+      this._heroAssetObserver.disconnect()
+      this._heroAssetObserver = null
+    }
+    if (this._heroAssetFitRaf != null) {
+      cancelAnimationFrame(this._heroAssetFitRaf)
+      this._heroAssetFitRaf = null
+    }
+    if (this._heroAssetOnResize) {
+      window.removeEventListener('resize', this._heroAssetOnResize)
+      this._heroAssetOnResize = null
+    }
   }
 }
 </script>
 
 <style scoped>
-/* 如果你之前有用到 .input-pv 或是 .custom-scrollbar 的 CSS，可以貼在這裡 */
-/* 例如輸入框背景色或捲軸樣式，如果沒有的話就放空即可 */
+/* 表單輸入：淺底深色字，避免在深色版面中出現淺色游標字而難以辨識 */
+.input-pv {
+  color: #0a0a0a;
+  background-color: #f1f5f9;
+  border: 1px solid #94a3b8;
+}
+.input-pv::placeholder {
+  color: #64748b;
+}
+.input-pv:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+.input-pv--accent {
+  border-color: #818cf8;
+  background-color: #eef2ff;
+}
+.input-pv--muted {
+  color: #475569;
+  background-color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+/* 表格數字與等寬：供市值輸入、損益與主視覺數字區塊一致 */
+.font-mono-data {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
+}
 </style>
