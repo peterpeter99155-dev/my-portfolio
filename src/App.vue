@@ -4,13 +4,23 @@
       
       <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-6 shadow-lg grid grid-cols-1 gap-6 items-center justify-items-center xl:grid-cols-[auto_minmax(280px,1fr)_auto_auto] xl:justify-items-stretch xl:gap-5">
         <div class="text-center xl:text-left w-full min-w-0">
+          <div class="flex items-center justify-center xl:justify-start gap-2 mb-2">
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">系統狀態：連線中</span>
+          </div>
           <h1 class="text-3xl lg:text-4xl font-black text-white tracking-tighter italic">資產戰略總部 <span class="text-indigo-500">v8.3</span></h1>
-          <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mt-2">Global Asset Commander / 終極擴充圖鑑</p>
+          <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mt-2">全球資產戰略指揮中心 / 終極擴充圖鑑</p>
         </div>
 
-        <div class="w-full max-w-full min-w-0 flex items-center justify-center bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner overflow-hidden xl:min-w-0">
+        <div class="w-full max-w-full min-w-0 flex items-center justify-center bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner overflow-hidden xl:min-w-0 relative">
           <div class="text-center w-full max-w-full min-w-0 px-1">
-            <p class="text-sm text-indigo-400 font-bold uppercase mb-2 tracking-wide xl:tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">🌍 全球總資產淨值 (TWD)</p>
+            <div class="flex flex-wrap items-center justify-center gap-3 mb-2">
+              <span class="text-sm text-indigo-400 font-bold uppercase tracking-wide xl:tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">🌍 全球總資產淨值</span>
+              <div class="flex bg-slate-800/80 rounded-md p-0.5 border border-slate-700">
+                <button @click.stop="displayCurrency = 'TWD'" :class="displayCurrency === 'TWD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">台幣</button>
+                <button @click.stop="displayCurrency = 'USD'" :class="displayCurrency === 'USD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">美金</button>
+              </div>
+            </div>
             <div ref="assetAmountFitWrap" class="mx-auto flex w-full max-w-full justify-center overflow-hidden rounded-xl py-1">
               <p
                 ref="assetAmountLine"
@@ -18,11 +28,11 @@
                 :class="{ 'select-none': isPrivateMode }"
                 :style="{ fontSize: heroAssetFontPx + 'px' }"
               >
-                <span class="shrink-0 text-indigo-300/90">NT$</span>
+                <span class="shrink-0 text-indigo-300/90">{{ displayCurrency === 'USD' ? '$' : 'NT$' }}</span>
                 <span
                   class="shrink-0"
                   :class="{ 'blur-md pointer-events-none rounded-sm': isPrivateMode }"
-                >{{ formatAmount(totalAssetTWD) }}</span>
+                >{{ formatAmount(totalAssetDisplay) }}</span>
               </p>
             </div>
           </div>
@@ -49,7 +59,10 @@
           </span>
           <span class="pr-0.5">{{ isPrivateMode ? '顯示金額' : '隱藏金額' }}</span>
         </button>
-        <div class="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-white/5 justify-end">
+        <div class="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-white/5 justify-end flex-wrap">
+          <button @click="stressTest" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/50 rounded-lg hover:bg-rose-500/40 transition-colors text-xs font-bold uppercase tracking-widest">
+            <span>🔥 壓力測試</span>
+          </button>
           <div>
             <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">美金換匯成本</label>
             <input type="number" v-model.number="fx.buyRate" step="0.01" @input="save" class="w-20 input-pv rounded p-1 font-bold text-sm text-center">
@@ -94,19 +107,29 @@
                  class="p-4 rounded-xl border-2 relative transition-all flex items-center justify-between"
                  :class="item.type === 'BUY' ? 'bg-slate-950 border-emerald-900/50' : (item.type === 'SELL' ? 'bg-slate-950 border-rose-900/50' : 'bg-slate-900 border-slate-800 opacity-50')">
               <div class="pl-3">
-                <span class="text-[10px] font-black uppercase tracking-widest block mb-1" :class="item.currency === 'USD' ? 'text-blue-400' : 'text-emerald-500'">{{ item.currency }} [{{ item.tag }}]</span>
+                <span class="text-[10px] font-black uppercase tracking-widest block mb-1" :class="item.mainCur === 'USD' ? 'text-blue-400' : 'text-emerald-500'">{{ item.mainCur === 'USD' ? '美金' : '台幣' }} [{{ item.tag }}]</span>
                 <span class="text-base font-black text-white uppercase truncate block">{{ item.name || '未命名' }}</span>
               </div>
               <div class="text-right">
                 <div v-if="item.type === 'BUY'" class="text-emerald-400">
-                  <p class="text-xs font-bold uppercase opacity-90 mb-1">買進 (BUY)</p>
-                  <p class="text-xl font-mono-data font-black">+{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ formatAmount(item.gapNative).toLocaleString() }}</p>
+                  <p class="text-xs font-bold uppercase opacity-90 mb-1">買進</p>
+                  <div class="flex justify-end items-baseline gap-1 text-xl font-mono-data font-black">
+                    <span>+</span>
+                    <span class="w-8 text-left">{{ item.mainCur === 'USD' ? '$' : 'NT$' }}</span>
+                    <span class="min-w-[100px] text-right">{{ formatAmount(item.gapDisplay).toLocaleString() }}</span>
+                    <span class="w-8 text-right text-sm">{{ item.mainCur === 'USD' ? 'USD' : 'TWD' }}</span>
+                  </div>
                 </div>
                 <div v-else-if="item.type === 'SELL'" class="text-rose-400">
-                  <p class="text-xs font-bold uppercase opacity-90 mb-1">賣出 (SELL)</p>
-                  <p class="text-xl font-mono-data font-black">-{{ item.currency === 'USD' ? '$' : 'NT$ ' }}{{ formatAmount(Math.abs(item.gapNative)).toLocaleString() }}</p>
+                  <p class="text-xs font-bold uppercase opacity-90 mb-1">賣出</p>
+                  <div class="flex justify-end items-baseline gap-1 text-xl font-mono-data font-black">
+                    <span>-</span>
+                    <span class="w-8 text-left">{{ item.mainCur === 'USD' ? '$' : 'NT$' }}</span>
+                    <span class="min-w-[100px] text-right">{{ formatAmount(Math.abs(item.gapDisplay)).toLocaleString() }}</span>
+                    <span class="w-8 text-right text-sm">{{ item.mainCur === 'USD' ? 'USD' : 'TWD' }}</span>
+                  </div>
                 </div>
-                <div v-else class="text-slate-500 italic text-sm">HOLD</div>
+                <div v-else class="text-slate-500 italic text-sm">持有</div>
               </div>
             </div>
           </div>
@@ -121,12 +144,20 @@
           <div class="col-span-1 text-center">操作</div>
         </div>
 
-        <div v-for="c in [usdCash, twdCash]" :key="c.currency" class="grid grid-cols-12 gap-4 p-4 bg-slate-900/30 border-b border-slate-800/50 items-center">
-          <div class="col-span-5 flex gap-2">
-            <span class="bg-slate-800 text-slate-400 font-bold px-3 py-2 rounded text-xs w-20 text-center border border-slate-700">{{ c.currency }}</span>
+        <div v-for="c in [usdCash, twdCash]" :key="c.currency" class="grid grid-cols-12 gap-4 p-4 bg-slate-900/30 border-b border-slate-800/50 items-start">
+          <div class="col-span-5 flex gap-2 items-center">
             <input v-model="c.name" class="w-full input-pv input-pv--muted rounded p-2.5 text-sm font-bold" disabled>
           </div>
-          <div class="col-span-3"><input type="number" v-model.number="c.current" @input="updateChart" class="w-full input-pv rounded p-2.5 font-mono-data text-right" placeholder="0"></div>
+          <div class="col-span-3">
+            <div class="relative w-full">
+              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-black px-1.5 py-0.5 rounded-md pointer-events-none" :class="c.currency === 'USD' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'">{{ c.currency === 'USD' ? '美金' : '台幣' }}</span>
+              <input type="number" v-model.number="c.current" @input="updateChart" class="w-full input-pv rounded p-2.5 pl-14 font-mono-data text-right" placeholder="0">
+            </div>
+            <div class="mt-2 w-full text-right pointer-events-none">
+              <span v-if="c.currency === 'USD'" class="text-[13px] text-slate-400 font-mono-data font-bold tracking-wide">約 NT$ {{ formatAmount(getTWDValue(c)) }}</span>
+              <span v-else class="text-[13px] text-slate-400 font-mono-data font-bold tracking-wide">約 $ {{ formatAmount(getTWDValue(c) / fx.currentRate) }}</span>
+            </div>
+          </div>
           <div class="col-span-3 flex items-center justify-end pr-4">
             <input type="number" v-model.number="c.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-center" placeholder="0">
             <span class="bg-slate-800 px-3 py-2.5 text-slate-400 rounded-r border border-l-0 border-slate-700 text-sm">%</span>
@@ -135,15 +166,11 @@
 
         <div v-for="type in ['core', 'satellite']" :key="type">
           <div class="bg-slate-800/80 px-4 py-2 flex justify-between items-center border-b border-slate-700/50">
-            <span class="text-xs font-black uppercase" :class="type==='core'?'text-blue-400':'text-amber-500'">{{ type==='core'?'🛡️ 核心大盤 (Core)':'🚀 戰略衛星 (Satellite)' }}</span>
+            <span class="text-xs font-black uppercase" :class="type==='core'?'text-blue-400':'text-amber-500'">{{ type==='core'?'🛡️ 核心大盤':'🚀 戰略衛星' }} (總佔比: {{ getGroupTargetPct(type) }}%)</span>
             <button @click="addRow(type)" class="text-[10px] bg-slate-700 hover:bg-indigo-600 text-white px-3 py-1 rounded transition-colors">+ 新增標的</button>
           </div>
-          <div v-for="(item, index) in (type === 'core' ? coreList : satelliteList)" :key="type+index" class="grid grid-cols-12 gap-4 p-4 border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors items-center">
-            <div class="col-span-5 relative flex gap-2">
-              <select v-model="item.currency" @change="updateChart" class="input-pv rounded p-2 text-xs font-bold w-20 text-center cursor-pointer currency-toggle">
-                <option value="USD">USD</option>
-                <option value="TWD">TWD</option>
-              </select>
+          <div v-for="(item, index) in (type === 'core' ? coreList : satelliteList)" :key="type+index" class="grid grid-cols-12 gap-4 p-4 border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors items-start">
+            <div class="col-span-5 relative flex gap-2 items-center">
               <div class="flex-1 relative">
                 <input v-model="item.name" @input="onSearchInput(item)" @focus="item.showSearch = true" @click.stop class="w-full input-pv rounded p-2.5 text-sm font-bold uppercase" placeholder="輸入名稱或代號...">
                 <ul v-if="item.showSearch && filteredDict(item.name).length > 0" class="absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-md shadow-2xl top-[100%] mt-1 max-h-48 overflow-y-auto custom-scrollbar">
@@ -151,7 +178,16 @@
                 </ul>
               </div>
             </div>
-            <div class="col-span-3"><input type="number" v-model.number="item.current" @input="updateChart" class="w-full input-pv rounded p-2.5 font-mono-data text-right" placeholder="0"></div>
+            <div class="col-span-3">
+              <div class="relative w-full">
+                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-black px-1.5 py-0.5 rounded-md pointer-events-none" :class="item.currency === 'USD' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'">{{ item.currency === 'USD' ? '美金' : '台幣' }}</span>
+                <input type="number" v-model.number="item.current" @input="updateChart" class="w-full input-pv rounded p-2.5 pl-14 font-mono-data text-right" placeholder="0">
+              </div>
+              <div class="mt-2 w-full text-right pointer-events-none">
+                <span v-if="item.currency === 'USD'" class="text-[13px] text-slate-400 font-mono-data font-bold tracking-wide">約 NT$ {{ formatAmount(getTWDValue(item)) }}</span>
+                <span v-else class="text-[13px] text-slate-400 font-mono-data font-bold tracking-wide">約 $ {{ formatAmount(getTWDValue(item) / fx.currentRate) }}</span>
+              </div>
+            </div>
             <div class="col-span-3 flex items-center justify-end pr-4">
               <input type="number" v-model.number="item.target" @input="updateChart" class="w-20 input-pv rounded-l p-2.5 font-mono-data text-center" placeholder="0">
               <span class="bg-slate-800 px-3 py-2.5 text-slate-400 rounded-r border border-l-0 border-slate-700 text-sm">%</span>
@@ -175,6 +211,7 @@
 export default {
   data() {
     return {
+      displayCurrency: 'TWD', // 全局計價幣別
       isPrivateMode: false, // 預設不開啟隱私模式
       heroAssetFontPx: 52, // 主標金額字級（px），由 fitHeroAssetAmount 依容器寬度調整
       _heroAssetFitRaf: null,
@@ -227,8 +264,17 @@ export default {
         return item.currency === 'USD' ? v * this.fx.currentRate : v; 
       }; 
     },
+    getDisplayValue() {
+      return (item) => {
+        const twd = this.getTWDValue(item);
+        return this.displayCurrency === 'USD' ? twd / this.fx.currentRate : twd;
+      };
+    },
     totalAssetTWD() { 
       return [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList].reduce((s, i) => s + this.getTWDValue(i), 0); 
+    },
+    totalAssetDisplay() { 
+      return [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList].reduce((s, i) => s + this.getDisplayValue(i), 0); 
     },
     totalTargetPct() { 
       const all = [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList]; 
@@ -245,12 +291,19 @@ export default {
         const targetTWD = this.totalAssetTWD * ((parseFloat(i.target) || 0) / 100);
         const gapTWD = targetTWD - this.getTWDValue(i);
         const type = gapTWD >= this.thresholdTWD ? 'BUY' : (gapTWD <= -this.thresholdTWD ? 'SELL' : 'HOLD');
-        const gapNative = i.currency === 'USD' ? (gapTWD / this.fx.currentRate) : gapTWD;
-        return { name: i.name, tag: i.tag, type, gapNative, currency: i.currency, isCash: i.isCash };
+        const mainCur = this.displayCurrency === 'USD' ? 'USD' : i.currency;
+        const gapDisplay = mainCur === 'USD' ? (gapTWD / this.fx.currentRate) : gapTWD;
+        return { name: i.name, tag: i.tag, type, gapDisplay, mainCur, isCash: i.isCash };
       }).sort((a, b) => a.type === 'BUY' ? -1 : 1);
     }
   },
   watch: {
+    totalAssetDisplay() {
+      this.scheduleFitHeroAssetAmount()
+    },
+    displayCurrency() {
+      this.updateChart();
+    },
     totalAssetTWD() {
       this.scheduleFitHeroAssetAmount()
     },
@@ -259,6 +312,19 @@ export default {
     }
   },
   methods: {
+
+    /**
+     * 計算特定群組的目標佔比總和
+     * @param {string} type - 群組類型 (core 或是 satellite)
+     */
+    getGroupTargetPct(type) {
+      const list = type === 'core' ? this.coreList : this.satelliteList;
+      return list.reduce((s, i) => s + (parseFloat(i.target) || 0), 0);
+    },
+    /**
+     * 排程執行自適應主視覺金額字體大小
+     * 使用 requestAnimationFrame 避免頻繁觸發影響效能
+     */
     scheduleFitHeroAssetAmount() {
       if (this._heroAssetFitRaf != null) cancelAnimationFrame(this._heroAssetFitRaf)
       this._heroAssetFitRaf = requestAnimationFrame(() => {
@@ -266,10 +332,18 @@ export default {
         this.fitHeroAssetAmount()
       })
     },
+    /**
+     * 取得主視覺金額的最大字體大小 (px)
+     * 根據視窗寬度決定
+     * @returns {number} 最大字體大小
+     */
     getHeroAssetFontMaxPx() {
       // 約對應 text-5xl / text-6xl（無捲軸，必要時往下縮）
       return window.matchMedia('(min-width: 1024px)').matches ? 60 : 48
     },
+    /**
+     * 動態調整主視覺金額的字體大小，使其能完整顯示在容器內
+     */
     fitHeroAssetAmount() {
       const wrap = this.$refs.assetAmountFitWrap
       const line = this.$refs.assetAmountLine
@@ -290,33 +364,84 @@ export default {
       line.style.removeProperty('font-size')
       this.heroAssetFontPx = chosen
     },
+    /**
+     * 過濾字典，提供股票代號自動補齊建議
+     * @param {string} q - 搜尋關鍵字
+     * @returns {string[]} 過濾後的字典陣列
+     */
     filteredDict(q) { 
-  if(!q) return [];
-  const search = q.toUpperCase();
-  // 核心邏輯：先過濾，再排序
-  return this.dictionary
-    .filter(d => d.toUpperCase().includes(search))
-    .sort((a, b) => {
-      // 讓「開頭就匹配」的標的排在前面 (例如輸入 V，VOO 會在最前面)
-      const aStart = a.toUpperCase().startsWith(search) ? 0 : 1;
-      const bStart = b.toUpperCase().startsWith(search) ? 0 : 1;
-      return aStart - bStart;
-    })
-    .slice(0, 12); // 只取前 12 筆，避免畫面太亂
-},
-    onSearchInput(item) { item.showSearch = true; },
-    selectStock(item, name) { item.name = name; item.showSearch = false; this.updateChart(); },
+      if(!q) return [];
+      const search = q.toUpperCase();
+      // 核心邏輯：先過濾，再排序
+      return this.dictionary
+        .filter(d => d.toUpperCase().includes(search))
+        .sort((a, b) => {
+          // 讓「開頭就匹配」的標的排在前面 (例如輸入 V，VOO 會在最前面)
+          const aStart = a.toUpperCase().startsWith(search) ? 0 : 1;
+          const bStart = b.toUpperCase().startsWith(search) ? 0 : 1;
+          return aStart - bStart;
+        })
+        .slice(0, 12); // 只取前 12 筆，避免畫面太亂
+    },
+    /**
+     * 自動偵測股票名稱以切換幣別
+     * 台灣股票多以數字開頭，美股多以英文字母開頭
+     * @param {Object} item - 資產項目
+     */
+    autoDetectCurrency(item) {
+      if (!item.name) return;
+      // 若開頭為數字 (如 2330, 0050)，設定為 TWD；否則設定為 USD
+      if (/^\d/.test(item.name.trim())) {
+        item.currency = 'TWD';
+      } else {
+        item.currency = 'USD';
+      }
+    },
+    /**
+     * 處理搜尋輸入框焦點事件，顯示建議選單
+     * @param {Object} item - 觸發事件的資產項目
+     */
+    onSearchInput(item) { 
+      item.showSearch = true; 
+      this.autoDetectCurrency(item);
+    },
+    /**
+     * 選擇建議清單中的股票
+     * @param {Object} item - 當前操作的資產項目
+     * @param {string} name - 選擇的股票名稱
+     */
+    selectStock(item, name) { 
+      item.name = name; 
+      item.showSearch = false; 
+      this.autoDetectCurrency(item);
+      this.updateChart(); 
+    },
+    /**
+     * 關閉所有資產項目的搜尋建議選單
+     */
     closeAllSearch() { [...this.coreList, ...this.satelliteList].forEach(i => i.showSearch = false); },
+    /**
+     * 新增資產列
+     * @param {string} type - 資產類型 ('core' 核心 或 'satellite' 衛星)
+     */
     addRow(type) { 
       const row = { name: '', currency: type === 'core' ? 'USD' : 'TWD', current: 0, target: 0, showSearch: false }; 
       if(type === 'core') this.coreList.push(row); else this.satelliteList.push(row); 
     },
+    /**
+     * 移除資產列
+     * @param {string} type - 資產類型 ('core' 核心 或 'satellite' 衛星)
+     * @param {number} idx - 要移除的索引
+     */
     removeRow(type, idx) { 
       if(confirm('確認移除？')) { 
         if(type === 'core') this.coreList.splice(idx, 1); else this.satelliteList.splice(idx, 1); 
         this.updateChart(); 
       } 
     },
+    /**
+     * 初始化 ECharts 圓餅圖
+     */
     initChart() { 
       // 確保使用外部載入的 echarts
       if(window.echarts) {
@@ -324,44 +449,74 @@ export default {
         window.addEventListener('resize', () => { if(this._chart) this._chart.resize(); }); 
       }
     },
+    /**
+     * 更新 ECharts 圓餅圖資料
+     */
     updateChart() {
       if(!this._chart) return;
       const data = [];
       const colors = ['#3b82f6', '#60a5fa', '#818cf8', '#93c5fd', '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a'];
       this.coreList.concat(this.satelliteList).forEach((i, idx) => { 
-        const v = this.getTWDValue(i); 
+        const v = this.getDisplayValue(i); 
         if(v > 0) data.push({ value: v, name: i.name || '未命名', itemStyle: { color: colors[idx % 8] } }); 
       });
-      if(this.getTWDValue(this.usdCash) > 0) data.push({ value: this.getTWDValue(this.usdCash), name: 'USD 現金', itemStyle: { color: '#0ea5e9' } });
-      if(this.getTWDValue(this.twdCash) > 0) data.push({ value: this.getTWDValue(this.twdCash), name: 'TWD 現金', itemStyle: { color: '#10b981' } });
+      if(this.getDisplayValue(this.usdCash) > 0) data.push({ value: this.getDisplayValue(this.usdCash), name: 'USD 現金', itemStyle: { color: '#0ea5e9' } });
+      if(this.getDisplayValue(this.twdCash) > 0) data.push({ value: this.getDisplayValue(this.twdCash), name: 'TWD 現金', itemStyle: { color: '#10b981' } });
+      const symbol = this.displayCurrency === 'USD' ? '$' : 'NT$';
       this._chart.setOption({ 
-        tooltip: { trigger: 'item', formatter: '{b}<br/>NT$ {c} ({d}%)' }, 
+        tooltip: { trigger: 'item', formatter: `{b}<br/>${symbol} {c} ({d}%)` }, 
         series: [{ type: 'pie', radius: ['35%', '60%'], label: { show: true, formatter: '{name|{b}}\n{perc|{d}%}', rich: { name: { color: '#f1f5f9', fontSize: 11, fontWeight: 'bold' }, perc: { color: '#94a3b8', fontSize: 10 } } }, data }] 
       });
       this.save();
     },
-    // 判斷資產是否偏離目標過遠
-      isDeviated(item) {
-        const currentPct = (this.getTWDValue(item) / this.totalAssetTWD) * 100;
-        const targetPct = parseFloat(item.target) || 0;
-        if (targetPct === 0) return false;
-        
-        // 計算偏離率：(實際-目標) / 目標
-        const deviation = Math.abs(currentPct - targetPct) / targetPct;
-        return deviation > 0.1; // 超過 10% 就亮紅燈
-      },// <--- 這裡也要加逗號，因為後面還有 save() 等方法
-      formatAmount(val) {
+    /**
+     * 判斷資產是否偏離目標比例過遠 (>10%)
+     * @param {Object} item - 資產項目
+     * @returns {boolean} 是否偏離過遠
+     */
+    isDeviated(item) {
+      const currentPct = (this.getTWDValue(item) / this.totalAssetTWD) * 100;
+      const targetPct = parseFloat(item.target) || 0;
+      if (targetPct === 0) return false;
+      
+      // 計算偏離率：(實際-目標) / 目標
+      const deviation = Math.abs(currentPct - targetPct) / targetPct;
+      return deviation > 0.1; // 超過 10% 就亮紅燈
+    },
+    /**
+     * 格式化金額顯示，處理隱私模式與千分位
+     * @param {number} val - 要格式化的金額
+     * @returns {string} 格式化後的字串
+     */
+    formatAmount(val) {
       if (this.isPrivateMode) return '****'; // 隱私模式下直接顯示星號
       
       // 原本的格式化邏輯（千分位）
       return new Intl.NumberFormat('en-US').format(Math.round(val));
-      },
+    },
+    /**
+     * 將當前資產狀態儲存至 localStorage
+     */
     save() { 
       localStorage.setItem('portfolio_v8_public_template', JSON.stringify({ 
         fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
         coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, target:i.target})), 
         satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, target:i.target})) 
       })); 
+    },
+    /**
+     * 執行壓力測試
+     * 隨機讓所有資產市值浮動 -5% ~ +5%，用以測試偏離警示系統
+     */
+    stressTest() {
+      const randomize = (item) => {
+        if (item.current > 0) {
+          const factor = 1 + (Math.random() * 0.1 - 0.05); // -5% ~ +5%
+          item.current = parseFloat((item.current * factor).toFixed(2));
+        }
+      };
+      [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList].forEach(randomize);
+      this.updateChart();
     }
   },
   mounted() {
