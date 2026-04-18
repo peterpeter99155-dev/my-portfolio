@@ -1,18 +1,42 @@
 <template>
   <div class="bg-slate-950 text-slate-100 p-4 md:p-8 font-sans min-h-screen">
     <div id="app" class="max-w-[1600px] mx-auto space-y-6" @click="closeAllSearch">
+      <nav class="sticky top-3 z-30 bg-slate-900/90 border border-slate-800 rounded-2xl p-2 backdrop-blur-md shadow-lg">
+        <div class="flex items-center gap-2">
+          <button
+            @click="switchTab('dashboard')"
+            :class="currentTab === 'dashboard' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'"
+            class="px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-colors"
+          >
+            股票統整室 (Dashboard)
+          </button>
+          <button
+            @click="switchTab('rebalancing')"
+            :class="currentTab === 'rebalancing' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-300 hover:bg-slate-800'"
+            class="px-4 py-2 rounded-xl text-sm font-bold tracking-wide transition-colors"
+          >
+            再平衡計算 (Rebalancing)
+          </button>
+        </div>
+      </nav>
       
-      <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-6 shadow-lg grid grid-cols-1 gap-6 items-center justify-items-center xl:grid-cols-[auto_minmax(280px,1fr)_auto_auto] xl:justify-items-stretch xl:gap-5">
-        <div class="text-center xl:text-left w-full min-w-0">
-          <div class="flex items-center justify-center xl:justify-start gap-2 mb-2">
+      <transition name="tab-fade" mode="out-in">
+        <section v-if="currentTab === 'rebalancing'" key="tab-rebalancing" class="space-y-6">
+      <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl shadow-black/20 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5 items-stretch">
+        <div class="w-full min-w-0 lg:col-span-4 bg-slate-950/55 rounded-2xl border border-slate-800/90 p-4 md:p-5">
+          <div class="flex items-center justify-start gap-2 mb-3">
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">系統狀態：連線中</span>
           </div>
-          <h1 class="text-3xl lg:text-4xl font-black text-white tracking-tighter italic">資產戰略總部 <span class="text-indigo-500">v8.3</span></h1>
-          <p class="text-slate-400 text-sm font-bold uppercase tracking-widest mt-2">全球資產戰略指揮中心 / 終極擴充圖鑑</p>
+          <h1 class="font-black text-white tracking-tight leading-[1.08] [font-size:clamp(2rem,3.2vw,3.25rem)] break-words">
+            資產戰略總部 <span class="text-indigo-500 align-baseline">v8.3</span>
+          </h1>
+          <p class="text-slate-300/90 text-sm md:text-base font-semibold tracking-wide mt-3 leading-relaxed">
+            全球資產戰略指揮中心 / 終極擴充圖鑑
+          </p>
         </div>
 
-        <div class="w-full max-w-full min-w-0 flex items-center justify-center bg-indigo-900/10 p-5 rounded-2xl border border-indigo-500/20 shadow-inner overflow-hidden xl:min-w-0 relative">
+        <div class="w-full min-w-0 lg:col-span-4 flex items-center justify-center bg-indigo-900/10 p-4 md:p-5 rounded-2xl border border-indigo-500/25 shadow-inner overflow-hidden">
           <div class="text-center w-full max-w-full min-w-0 px-1">
             <div class="flex flex-wrap items-center justify-center gap-3 mb-2">
               <span class="text-sm text-indigo-400 font-bold uppercase tracking-wide xl:tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">🌍 全球總資產淨值</span>
@@ -37,44 +61,48 @@
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          :aria-pressed="isPrivateMode"
-          :aria-label="isPrivateMode ? '顯示金額' : '隱藏金額'"
-          @click.stop="isPrivateMode = !isPrivateMode"
-          class="group relative inline-flex w-max max-w-full shrink-0 justify-self-center items-center gap-2.5 overflow-hidden rounded-full border border-slate-600/70 bg-gradient-to-b from-slate-800/95 to-slate-900/95 px-1 py-1 pl-1 pr-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300 shadow-md shadow-black/20 ring-1 ring-white/5 transition-all hover:border-indigo-500/45 hover:text-white hover:shadow-lg hover:shadow-indigo-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 active:scale-[0.98]"
-        >
-          <span
-            class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-600/50 bg-slate-950/80 text-slate-400 transition-colors group-hover:border-indigo-500/35 group-hover:bg-indigo-950/50 group-hover:text-indigo-200"
-            aria-hidden="true"
-          >
-            <svg v-if="isPrivateMode" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            <svg v-else class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-          </span>
-          <span class="pr-0.5">{{ isPrivateMode ? '顯示金額' : '隱藏金額' }}</span>
-        </button>
-        <div class="flex items-center gap-3 bg-slate-800/50 p-4 rounded-xl border border-white/5 justify-end flex-wrap">
-          <button @click="stressTest" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/50 rounded-lg hover:bg-rose-500/40 transition-colors text-xs font-bold uppercase tracking-widest">
+        <div class="w-full min-w-0 lg:col-span-4 bg-slate-950/40 p-4 rounded-2xl border border-white/10 flex flex-col gap-4">
+          <div class="flex justify-start md:justify-end">
+            <button
+              type="button"
+              :aria-pressed="isPrivateMode"
+              :aria-label="isPrivateMode ? '顯示金額' : '隱藏金額'"
+              @click.stop="isPrivateMode = !isPrivateMode"
+              class="group relative inline-flex w-max max-w-full shrink-0 items-center gap-2.5 overflow-hidden rounded-full border border-slate-600/70 bg-gradient-to-b from-slate-800/95 to-slate-900/95 px-1 py-1 pl-1 pr-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300 shadow-md shadow-black/20 ring-1 ring-white/5 transition-all hover:border-indigo-500/45 hover:text-white hover:shadow-lg hover:shadow-indigo-950/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 active:scale-[0.98]"
+            >
+              <span
+                class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-600/50 bg-slate-950/80 text-slate-400 transition-colors group-hover:border-indigo-500/35 group-hover:bg-indigo-950/50 group-hover:text-indigo-200"
+                aria-hidden="true"
+              >
+                <svg v-if="isPrivateMode" class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <svg v-else class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </span>
+              <span class="pr-0.5 whitespace-nowrap">{{ isPrivateMode ? '顯示金額' : '隱藏金額' }}</span>
+            </button>
+          </div>
+          <div class="flex items-end gap-3 justify-start md:justify-end flex-wrap">
+            <button @click="stressTest" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/50 rounded-lg hover:bg-rose-500/40 transition-colors text-xs font-bold uppercase tracking-widest">
             <span>🔥 壓力測試</span>
-          </button>
-          <div>
-            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">美金換匯成本</label>
-            <input type="number" v-model.number="fx.buyRate" step="0.01" @input="save" class="w-20 input-pv rounded p-1 font-bold text-sm text-center">
-          </div>
-          <div>
-            <label class="block text-[10px] text-indigo-400 font-bold mb-1 uppercase">市場即時匯率</label>
-            <input type="number" v-model.number="fx.currentRate" step="0.01" @input="updateChart" class="w-20 input-pv input-pv--accent rounded p-1 font-bold text-sm text-center">
-          </div>
-          <div class="pl-3 border-l border-slate-700 text-right">
-            <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">總匯差損益</label>
-            <div :class="fxProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-lg font-black font-mono-data tabular-nums">
-              {{ fxProfit >= 0 ? '+' : '' }}NT$ {{ fxProfit.toLocaleString() }}
+            </button>
+            <div>
+              <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase text-center">美金換匯成本</label>
+              <input type="number" v-model.number="fx.buyRate" step="0.01" @input="save" class="w-20 input-pv rounded p-1.5 font-bold text-sm text-center">
+            </div>
+            <div>
+              <label class="block text-[10px] text-indigo-400 font-bold mb-1 uppercase text-center">市場即時匯率</label>
+              <input type="number" v-model.number="fx.currentRate" step="0.01" @input="updateChart" class="w-20 input-pv input-pv--accent rounded p-1.5 font-bold text-sm text-center">
+            </div>
+            <div class="pl-3 border-l border-slate-700 text-right min-w-[140px]">
+              <label class="block text-[10px] text-slate-400 font-bold mb-1 uppercase">總匯差損益</label>
+              <div :class="fxProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'" class="text-xl font-black font-mono-data tabular-nums leading-none">
+                {{ fxProfit >= 0 ? '+' : '' }}NT$ {{ fxProfit.toLocaleString() }}
+              </div>
             </div>
           </div>
         </div>
@@ -137,6 +165,15 @@
       </div>
 
       <div class="bg-slate-900 rounded-2xl border-2 border-slate-800 overflow-hidden shadow-xl">
+        <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex items-center justify-between gap-3">
+          <p class="text-xs text-slate-400 font-bold">再平衡資料來源：目前使用手動設定，可用按鈕帶入統整室當前部位。</p>
+          <button
+            @click="importDashboardPositions"
+            class="text-[11px] px-3 py-1.5 rounded-lg bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/35 transition-colors font-bold whitespace-nowrap"
+          >
+            一鍵帶入當前部位
+          </button>
+        </div>
         <div class="grid grid-cols-12 gap-4 p-4 bg-slate-950 text-xs font-bold text-slate-400 uppercase border-b-2 border-slate-800 items-center">
           <div class="col-span-5">資產標的名稱</div>
           <div class="col-span-3 text-right">目前市值 (原生貨幣)</div>
@@ -202,15 +239,31 @@
           <div class="col-span-1 text-center text-2xl">{{ isAllocationValid ? '✅' : '⚠️' }}</div>
         </div>
       </div>
-    </div>
+        </section>
+        <section v-else key="tab-dashboard">
+          <StockDashboard
+            :positions="dashboardPositions"
+            :fx="fx"
+            :is-private-mode="isPrivateMode"
+            :active="currentTab === 'dashboard'"
+            @positions-updated="handleDashboardPositionsUpdated"
+          />
+        </section>
+      </transition>
+      </div>
   </div>
 </template>
 
 <script>
+import StockDashboard from './components/StockDashboard.vue'
 // 2. 把原本包在 createApp 裡面的東西，改成 export default 導出
 export default {
+  components: {
+    StockDashboard,
+  },
   data() {
     return {
+      currentTab: 'rebalancing',
       displayCurrency: 'TWD', // 全局計價幣別
       isPrivateMode: false, // 預設不開啟隱私模式
       heroAssetFontPx: 52, // 主標金額字級（px），由 fitHeroAssetAmount 依容器寬度調整
@@ -221,8 +274,9 @@ export default {
       fx: { buyRate: 31.5, currentRate: 32.0 },
       usdCash: { name: '美金現金', currency: 'USD', current: 0, target: 0 },
       twdCash: { name: '台幣現金', currency: 'TWD', current: 0, target: 0 },
-      coreList: [{ name: '', currency: 'USD', current: 0, target: 0, showSearch: false }],
-      satelliteList: [{ name: '', currency: 'TWD', current: 0, target: 0, showSearch: false }],
+      coreList: [{ name: '', currency: 'USD', current: 0, cost: 0, shares: 1, target: 0, showSearch: false }],
+      satelliteList: [{ name: '', currency: 'TWD', current: 0, cost: 0, shares: 1, target: 0, showSearch: false }],
+      dashboardPositions: [],
       dictionary: [
         "TQQQ (那斯達克正3)","SQQQ (那斯達克反3)","SOXL (半導體正3)","SOXS (半導體反3)","FNGU (FANG+正3)","FNGD (FANG+反3)","USD (半導體正2)","SSG (半導體反2)","QLD (那斯達克正2)","QID (那斯達克反2)","SSO (標普500正2)","SDS (標普500反2)","UPRO (標普500正3)","SPXU (標普500反3)","LABU (生技正3)","LABD (生技反3)","YINN (中國正3)","YANG (中國反3)","NUGT (黃金礦業正2)","DUST (黃金礦業反2)","BITX (比特幣期貨正2)","BITO (比特幣期貨)","BOIL (天然氣正2)","KOLD (天然氣反2)","TECL (科技正3)","TECS (科技反3)",
         "SPY","VOO","IVV","QQQ","QQQM","VTI","VXUS","VT","VWO","VEA","IWM","DIA","SMH","SOXX","XLK","XLF","XLV","XLE","XLU","XLI","XLB","XLP","XLY","IBIT","FBTC","ARKK","GLD","IAU","TLT","IEF","SHY","BND","AGG","VNQ","URA","NLR","TAN","ICLN","LIT",
@@ -298,6 +352,13 @@ export default {
     }
   },
   watch: {
+    currentTab(tab) {
+      if (tab !== 'rebalancing') return
+      this.$nextTick(() => {
+        if (this._chart) this._chart.resize()
+        this.scheduleFitHeroAssetAmount()
+      })
+    },
     totalAssetDisplay() {
       this.scheduleFitHeroAssetAmount()
     },
@@ -312,6 +373,56 @@ export default {
     }
   },
   methods: {
+    switchTab(tab) {
+      this.currentTab = tab
+    },
+    handleDashboardPositionsUpdated(positions) {
+      this.dashboardPositions = positions
+      this.save()
+    },
+    importDashboardPositions() {
+      const source = this.dashboardPositions.filter((item) => item?.name)
+      if (!source.length) {
+        console.warn('[Rebalancing] 股票統整室目前沒有可帶入的部位')
+        return
+      }
+
+      const targetMap = new Map()
+      const rememberTarget = (item) => {
+        const key = `${String(item.name || '').toUpperCase()}__${item.currency}`
+        targetMap.set(key, parseFloat(item.target) || 0)
+      }
+      this.coreList.forEach(rememberTarget)
+      this.satelliteList.forEach(rememberTarget)
+
+      const mapRow = (item) => {
+        const key = `${String(item.name || '').toUpperCase()}__${item.currency}`
+        return {
+          name: item.name || '',
+          currency: item.currency === 'TWD' ? 'TWD' : 'USD',
+          current: parseFloat(item.current) || 0,
+          cost: parseFloat(item.cost) || 0,
+          shares: Math.max(parseFloat(item.shares) || 1, 1),
+          target: targetMap.has(key) ? targetMap.get(key) : 0,
+          showSearch: false,
+        }
+      }
+
+      this.coreList = source.filter((item) => item.currency === 'USD').map(mapRow)
+      this.satelliteList = source.filter((item) => item.currency === 'TWD').map(mapRow)
+      if (!this.coreList.length) this.coreList = [{ name: '', currency: 'USD', current: 0, cost: 0, shares: 1, target: 0, showSearch: false }]
+      if (!this.satelliteList.length) this.satelliteList = [{ name: '', currency: 'TWD', current: 0, cost: 0, shares: 1, target: 0, showSearch: false }]
+      this.updateChart()
+    },
+    normalizePortfolioRows() {
+      const normalize = (item) => ({
+        ...item,
+        cost: Number.isFinite(item.cost) ? item.cost : (parseFloat(item.current) || 0),
+        shares: Number.isFinite(item.shares) ? Math.max(item.shares, 1) : 1,
+      })
+      this.coreList = this.coreList.map(normalize)
+      this.satelliteList = this.satelliteList.map(normalize)
+    },
 
     /**
      * 計算特定群組的目標佔比總和
@@ -425,7 +536,7 @@ export default {
      * @param {string} type - 資產類型 ('core' 核心 或 'satellite' 衛星)
      */
     addRow(type) { 
-      const row = { name: '', currency: type === 'core' ? 'USD' : 'TWD', current: 0, target: 0, showSearch: false }; 
+      const row = { name: '', currency: type === 'core' ? 'USD' : 'TWD', current: 0, cost: 0, shares: 1, target: 0, showSearch: false }; 
       if(type === 'core') this.coreList.push(row); else this.satelliteList.push(row); 
     },
     /**
@@ -500,8 +611,9 @@ export default {
     save() { 
       localStorage.setItem('portfolio_v8_public_template', JSON.stringify({ 
         fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
-        coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, target:i.target})), 
-        satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, target:i.target})) 
+        coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})), 
+        satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})),
+        dashboardPositions: this.dashboardPositions.map(i => ({ name: i.name, currency: i.currency, current: i.current, cost: i.cost, shares: i.shares, lastPrice: i.lastPrice }))
       })); 
     },
     /**
@@ -525,10 +637,18 @@ export default {
       try { 
         const p = JSON.parse(saved); 
         Object.assign(this, p); 
+        this.normalizePortfolioRows()
+        if (!Array.isArray(this.dashboardPositions)) this.dashboardPositions = []
+        if (!this.dashboardPositions.length) {
+          this.dashboardPositions = [...this.coreList, ...this.satelliteList]
+            .filter(i => i?.name)
+            .map(i => ({ name: i.name, currency: i.currency, current: i.current, cost: i.cost, shares: i.shares, lastPrice: i.lastPrice }))
+        }
         this.coreList.forEach(i => i.showSearch = false); 
         this.satelliteList.forEach(i => i.showSearch = false); 
       } catch(e) {} 
     }
+    this.normalizePortfolioRows()
     this.$nextTick(() => { 
       setTimeout(() => { 
         this.initChart(); 
@@ -592,5 +712,15 @@ export default {
 .font-mono-data {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-variant-numeric: tabular-nums;
+}
+
+.tab-fade-enter-active,
+.tab-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.tab-fade-enter-from,
+.tab-fade-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 </style>
