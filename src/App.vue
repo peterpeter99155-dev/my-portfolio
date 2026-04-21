@@ -209,13 +209,6 @@
       </div>
         </section>
         <section v-else key="tab-dashboard" class="space-y-6">
-          <!-- Top: Fixed Visual Area (Pie Chart) -->
-          <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg flex flex-col items-center justify-center relative">
-            <h2 class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-widest z-10">全球資產配置</h2>
-            <div class="relative w-full flex items-center justify-center mt-2">
-              <div id="echart-container" class="w-full h-[220px] md:h-[300px]"></div>
-            </div>
-          </div>
           <StockDashboard
             :positions="dashboardPositions"
             :dictionary="dictionary"
@@ -223,9 +216,19 @@
             :display-currency="displayCurrency"
             @update:displayCurrency="displayCurrency = $event"
             :is-private-mode="isPrivateMode"
+            @toggle-private-mode="isPrivateMode = !isPrivateMode"
             :active="currentTab === 'dashboard'"
             @positions-updated="handleDashboardPositionsUpdated"
-          />
+          >
+            <template #chart>
+              <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg flex flex-col items-center justify-center relative mt-2">
+                <h2 class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-widest z-10">全球資產配置 <span class="text-slate-500 font-normal ml-1">Asset Allocation</span></h2>
+                <div class="relative w-full flex items-center justify-center mt-2">
+                  <div id="echart-container" class="w-full h-[220px] md:h-[300px]"></div>
+                </div>
+              </div>
+            </template>
+          </StockDashboard>
         </section>
       </transition>
       </div>

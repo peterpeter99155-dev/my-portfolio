@@ -7,6 +7,18 @@
           <button @click="$emit('update:displayCurrency', 'USD')" :class="displayCurrency === 'USD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">美金</button>
         </div>
         <button
+          @click="$emit('toggle-private-mode')"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors border bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
+        >
+          <svg v-if="isPrivateMode" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" />
+          </svg>
+          <svg v-else class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" />
+          </svg>
+          <span>{{ isPrivateMode ? '顯示' : '隱藏' }}</span>
+        </button>
+        <button
           @click="refreshAll(true)"
           :disabled="isRefreshing"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors border"
@@ -26,20 +38,23 @@
 
     <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
       <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">總投資成本</p>
+        <p class="text-xs text-slate-400 font-bold mb-1">總投資成本 <span class="text-slate-500 font-normal ml-1">Total Cost</span></p>
         <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalCostDisplay) }}</p>
       </article>
       <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">目前總市值</p>
+        <p class="text-xs text-slate-400 font-bold mb-1">目前總市值 <span class="text-slate-500 font-normal ml-1">Total Market</span></p>
         <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalMarketDisplay) }}</p>
       </article>
       <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">總損益百分比</p>
+        <p class="text-xs text-slate-400 font-bold mb-1">總損益百分比 <span class="text-slate-500 font-normal ml-1">Total Return</span></p>
         <p :class="profitClass(summary.totalProfitTwd)" class="text-2xl font-black font-mono-data">
           {{ summary.profitPct >= 0 ? '+' : '' }}{{ summary.profitPct.toFixed(2) }}%
         </p>
       </article>
     </section>
+
+    <!-- Chart Slot -->
+    <slot name="chart"></slot>
 
     <section class="bg-slate-900 rounded-xl border border-slate-800 p-4">
       <h3 class="text-sm font-black text-slate-200 mb-3">新增標的</h3>
@@ -109,52 +124,72 @@
       </article>
     </section>
 
-    <section v-else class="space-y-0 bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-lg shadow-black/10">
+    <section v-else class="space-y-0 bg-slate-900 rounded-xl border border-slate-800 overflow-visible shadow-lg shadow-black/10">
+      <div class="sticky top-[68px] z-20 flex bg-slate-900/95 backdrop-blur px-3 py-2.5 border-b border-slate-700 text-[11px] font-bold text-slate-300 tracking-wider shadow-sm items-center rounded-t-xl">
+        <div class="flex-[1.1] min-w-0">標的/總值 <span class="text-slate-500 font-normal ml-1">Symbol/Total</span></div>
+        <div class="flex-1 min-w-0 text-center">市價/均價 <span class="text-slate-500 font-normal ml-1">Price/Avg</span></div>
+        <div class="flex-1 min-w-0 text-right pr-6">損益 <span class="text-slate-500 font-normal ml-1">P&L</span></div>
+      </div>
       <p class="text-[11px] text-slate-400 px-3 py-2 border-b border-slate-800 bg-slate-950/50">提示：點擊右側垃圾桶可刪除標的。</p>
       <article
         v-for="item in dashboardRows"
         :key="item.key"
-        class="border-b border-slate-800/80 py-2.5 px-3 hover:bg-slate-800/40 transition-colors last:border-0"
+        class="border-b border-slate-800/80 py-3 px-3 hover:bg-slate-800/40 transition-colors last:border-0"
         @touchstart="handleTouchStart($event)"
         @touchend="handleTouchEnd($event, item.index)"
       >
-        <div class="flex items-center w-full gap-1">
-          <!-- 左欄：股票代碼與股數 -->
-          <div class="flex-1 min-w-0">
+        <div class="flex items-center w-full gap-2">
+          <!-- 左欄：股票代碼、股數、市值、成本 -->
+          <div class="flex-[1.1] min-w-0 pr-1">
             <p class="text-lg font-bold text-white truncate leading-tight">{{ item.symbol }}</p>
-            <p class="text-sm text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">{{ formatShares(item.shares) }} 股</p>
+            <p class="text-xs text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">{{ formatShares(item.shares) }} 股</p>
+            
+            <div v-if="item.currentPrice !== null" class="mt-2 flex flex-col gap-0.5">
+              <p class="text-[10px] text-slate-300 font-mono-data tabular-nums truncate">
+                <span class="text-slate-500 mr-1">市值</span>{{ item.currencySymbol }}{{ formatNumber(item.marketValue) }}
+              </p>
+              <p class="text-[10px] text-slate-300 font-mono-data tabular-nums truncate">
+                <span class="text-slate-500 mr-1">成本</span>{{ item.currencySymbol }}{{ formatNumber(item.costTotal) }}
+              </p>
+            </div>
           </div>
 
-          <!-- 中欄：真實現價與成本 -->
-          <div class="flex-1 min-w-0 text-center">
-            <div v-if="item.currentPrice === null" class="flex flex-col items-center gap-1.5 py-1">
+          <!-- 中欄：真實現價與均價 -->
+          <div class="flex-1 min-w-0 flex flex-col justify-center border-l border-slate-700/50 pl-3">
+            <div v-if="item.currentPrice === null" class="flex flex-col gap-1.5 py-1">
               <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
               <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
             </div>
             <template v-else>
-              <p class="text-base font-mono-data tabular-nums font-medium text-white truncate leading-tight">
-                {{ item.currencySymbol }}{{ formatNumber(item.currentPrice) }}
-              </p>
-              <p class="text-sm text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">
-                {{ item.currencySymbol }}{{ formatNumber(item.costPrice) }}
-              </p>
+              <div class="flex items-center justify-between w-full pr-1">
+                <span class="text-[10px] text-indigo-400 font-bold shrink-0">市價</span>
+                <span class="text-sm font-mono-data tabular-nums font-medium text-white truncate">
+                  {{ item.currencySymbol }}{{ formatNumber(item.currentPrice) }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between w-full pr-1 mt-1.5">
+                <span class="text-[10px] text-slate-500 font-bold shrink-0">均價</span>
+                <span class="text-xs text-slate-400 font-mono-data tabular-nums truncate">
+                  {{ item.currencySymbol }}{{ formatNumber(item.costPrice) }}
+                </span>
+              </div>
             </template>
           </div>
 
           <!-- 右欄：損益金額、百分比、匯率貢獻 -->
-          <div class="flex-1 min-w-0 text-right flex flex-col justify-center pr-1">
+          <div class="flex-1 min-w-0 text-right flex flex-col justify-center pr-1 border-l border-slate-700/50 pl-2">
             <div v-if="item.currentPrice === null" class="flex flex-col items-end gap-1.5 py-1">
               <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
               <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
             </div>
             <template v-else>
-              <p class="text-base font-mono-data tabular-nums font-bold truncate leading-tight" :class="profitClass(item.totalPnlTwd)">
+              <p class="text-[15px] font-mono-data tabular-nums font-bold truncate leading-tight" :class="profitClass(item.totalPnlTwd)">
                 {{ item.totalPnlTwd >= 0 ? '+' : '' }}{{ formatNumber(item.totalPnlDisplay) }}
               </p>
-              <p class="text-sm font-mono-data tabular-nums font-bold truncate" :class="profitClass(item.totalPnlTwd)">
+              <p class="text-xs font-mono-data tabular-nums font-bold truncate mt-1" :class="profitClass(item.totalPnlTwd)">
                 {{ item.pnlPct >= 0 ? '+' : '' }}{{ item.pnlPct.toFixed(2) }}%
               </p>
-              <p class="text-[10px] text-slate-500 font-mono-data tabular-nums mt-0.5 truncate">
+              <p class="text-[9px] text-slate-500 font-mono-data tabular-nums mt-1.5 truncate bg-slate-800/50 inline-block px-1 rounded self-end">
                 匯差 {{ item.fxContributionTwd >= 0 ? '+' : '' }}{{ formatNumber(item.fxContributionTwd) }}
               </p>
             </template>
@@ -188,7 +223,7 @@ export default {
     isPrivateMode: { type: Boolean, default: false },
     active: { type: Boolean, default: false },
   },
-  emits: ['positions-updated', 'update:displayCurrency'],
+  emits: ['positions-updated', 'update:displayCurrency', 'toggle-private-mode'],
   data() {
     return {
       isRefreshing: false,
