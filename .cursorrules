@@ -1,0 +1,26 @@
+# AI 開發者交接手冊 (AI Agent Handover Manual)
+
+作為下一個接手此專案的 AI 開發者，請務必詳讀並嚴格遵守以下系統架構與開發紀律，避免破壞已收斂的高品質架構。
+
+## 1. 核心技術與版本規範 (Tech Stack Rules)
+- **框架寫法**: 嚴格要求使用 **Vue 3 Composition API** + `<script setup>` 語法糖。絕對禁止使用 Options API (`data()`, `methods`, `mounted` 等傳統寫法)。
+- **CSS**: 優先使用 Tailwind CSS utility classes 進行佈局與樣式控制。若需要客製化樣式或處理隱藏瀏覽器預設行為（如 `hide-spinners`），必須加在組件的 `<style scoped>` 內。
+- **不隨意安裝依賴**: 專案維持極度輕量化。若非絕對必要（如極端複雜的功能），請使用 Vanilla JS / Vue 核心功能解決，不要隨便 npm install 新套件。
+
+## 2. 狀態管理與資料流向 (Data Flow Discipline)
+- **單一資料源 (SSOT)**: 
+  所有投資組合的核心資料與全域邏輯（如匯率、現值計算、新增/刪除標的）**必須**統一放在 `src/composables/usePortfolio.js` 中管理。
+- **禁止私自拷貝狀態**: 
+  各個 UI 組件（如 `App.vue`, `RebalanceRow.vue`）只能讀取或調用 `usePortfolio` 所暴露的方法。禁止在 Component 內部將 `positions` copy 一份，然後在 Component 內處理完再寫回，這會破壞資料的一致性與 LocalStorage 同步。
+
+## 3. FinTech UI / UX 設計紀律 (Aesthetic Standards)
+- **金融數據字體**: 所有金融數據（金額、佔比、股數）必須加入 `tabular-nums` 及 `font-mono` 類別，確保數字在跳動時垂直對齊，且具有專業的金融儀表板質感。
+- **隱私模式 (Privacy Mode)**: 顯示敏感數據時，必須支援 `isPrivateMode`。當開啟時，使用 `****` 替換原始數字，或套用 `blur-sm` 與 `select-none` 樣式。
+- **Mobile First 與 防禦性 UI**: 
+  - 確保在手機上的高度可用性（避免版面破圖、字體溢出）。
+  - 所有數值輸入框 (`type="number"`) 都必須隱藏上下箭頭（使用 `hide-spinners` class），以符合客製化介面標準。
+
+## 4. 效能與防呆處理 (Edge Case Handling)
+- **非同步請求 Timeout 控制**: Fetch 外部即時報價（如 Yahoo Finance）時，必須實作 `AbortController` 確保 10 秒 Timeout，避免網路延遲導致 UI 永久卡死。
+- **防禦性數學計算**: 所有的數學運算（如計算投資組合佔比、平均成本），必須預先防範除以零 (Division by Zero) 與出現 `NaN` 的情況。
+- **Memory Leak 防範**: 若在組件內掛載了 `window` 事件監聽器、`ResizeObserver` 或 `requestAnimationFrame`，必須在 `onBeforeUnmount` 生命週期中確實註銷與清除。

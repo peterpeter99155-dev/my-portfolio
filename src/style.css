@@ -12,4 +12,14 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  /* Hide number input spinners for cleaner UI */
+  .hide-spinners::-webkit-outer-spin-button,
+  .hide-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .hide-spinners {
+    -moz-appearance: textfield;
+  }
 }
