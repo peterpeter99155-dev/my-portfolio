@@ -1,14 +1,14 @@
 <template>
   <div class="space-y-5" @click="closeSearch">
     <div class="flex items-center justify-end">
-      <div class="flex items-center gap-2">
-        <div class="flex bg-slate-800/80 rounded-md p-0.5 border border-slate-700">
-          <button @click="$emit('update:displayCurrency', 'TWD')" :class="displayCurrency === 'TWD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">台幣</button>
-          <button @click="$emit('update:displayCurrency', 'USD')" :class="displayCurrency === 'USD' ? 'bg-indigo-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase transition-colors">美金</button>
+      <div class="flex items-center gap-2.5">
+        <div class="flex bg-slate-800/90 rounded-lg p-1 border border-slate-700/80 shadow-inner">
+          <button @click="$emit('update:displayCurrency', 'TWD')" :class="displayCurrency === 'TWD' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'" class="min-w-[48px] h-[36px] text-[11px] font-bold rounded-md uppercase transition-all">台幣</button>
+          <button @click="$emit('update:displayCurrency', 'USD')" :class="displayCurrency === 'USD' ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-700/50'" class="min-w-[48px] h-[36px] text-[11px] font-bold rounded-md uppercase transition-all">美金</button>
         </div>
         <button
           @click="$emit('toggle-private-mode')"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors border bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white"
+          class="flex items-center justify-center gap-1.5 px-4 h-[44px] rounded-lg text-xs font-bold tracking-wide transition-all border bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white hover:border-slate-500 active:scale-95"
         >
           <svg v-if="isPrivateMode" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" />
@@ -21,8 +21,8 @@
         <button
           @click="refreshAll(true)"
           :disabled="isRefreshing"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors border"
-          :class="isRefreshing ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/35'"
+          class="flex items-center justify-center gap-1.5 px-4 h-[44px] rounded-lg text-xs font-bold tracking-wide transition-all border"
+          :class="isRefreshing ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25 active:scale-95'"
         >
           <svg v-if="!isRefreshing" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -37,17 +37,17 @@
     </div>
 
     <section class="grid grid-cols-1 md:grid-cols-3 gap-3">
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">總投資成本 <span class="text-slate-500 font-normal ml-1">Total Cost</span></p>
-        <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalCostDisplay) }}</p>
+      <article class="bg-gray-900/50 rounded-xl p-4 flex flex-col justify-center items-center text-center">
+        <p class="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-widest">Total Cost</p>
+        <p class="text-2xl font-bold text-gray-100 font-mono tabular-nums leading-none">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalCostDisplay) }}</p>
       </article>
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">目前總市值 <span class="text-slate-500 font-normal ml-1">Total Market</span></p>
-        <p class="text-2xl font-black text-slate-100 font-mono-data">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalMarketDisplay) }}</p>
+      <article class="bg-gray-900/50 rounded-xl p-4 flex flex-col justify-center items-center text-center">
+        <p class="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-widest">Market Value</p>
+        <p class="text-2xl font-bold text-gray-100 font-mono tabular-nums leading-none">{{ displayCurrency === 'USD' ? '$' : 'NT$' }} {{ formatNumber(summary.totalMarketDisplay) }}</p>
       </article>
-      <article class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg">
-        <p class="text-xs text-slate-400 font-bold mb-1">總損益百分比 <span class="text-slate-500 font-normal ml-1">Total Return</span></p>
-        <p :class="profitClass(summary.totalProfitTwd)" class="text-2xl font-black font-mono-data">
+      <article class="bg-gray-900/50 rounded-xl p-4 flex flex-col justify-center items-center text-center">
+        <p class="text-[11px] text-gray-400 font-bold mb-1 uppercase tracking-widest">Total Return</p>
+        <p :class="summary.profitPct >= 0 ? 'text-[#00C805]' : 'text-[#FF5000]'" class="text-2xl font-bold font-mono tabular-nums leading-none">
           {{ summary.profitPct >= 0 ? '+' : '' }}{{ summary.profitPct.toFixed(2) }}%
         </p>
       </article>
@@ -56,61 +56,63 @@
     <!-- Chart Slot -->
     <slot name="chart"></slot>
 
-    <section class="bg-slate-900 rounded-xl border border-slate-800 p-4">
-      <h3 class="text-sm font-black text-slate-200 mb-3">新增標的</h3>
-      <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-        <label class="col-span-2 md:col-span-2 relative">
-          <span class="block text-[11px] text-slate-400 mb-1 font-bold">股票代號</span>
+    <section class="bg-gray-900/40 rounded-xl p-4 md:p-5 mt-6 border border-gray-800/50 shadow-sm">
+      <h3 class="text-sm font-bold text-gray-200 mb-4 tracking-wide">Add Symbol</h3>
+      <div class="grid grid-cols-2 md:grid-cols-12 gap-3 items-end">
+        <label class="col-span-2 md:col-span-4 relative group">
+          <span class="block text-[10px] text-gray-500 mb-1.5 font-bold uppercase tracking-widest transition-colors group-focus-within:text-indigo-400">Symbol</span>
           <input
             v-model.trim="newStock.symbol"
             @input="onSearchInput"
             @focus="showSearch = true"
             @click.stop
-            class="w-full rounded-lg bg-slate-200 text-slate-900 px-3 py-2 text-sm font-bold uppercase"
-            placeholder="例：SPY、2330"
+            class="w-full h-11 rounded-lg bg-gray-800 text-gray-100 px-3 text-sm font-bold uppercase border border-gray-700 focus:outline-none focus:border-indigo-500 focus:bg-gray-900 transition-all placeholder:text-gray-600 shadow-inner"
+            placeholder="e.g. SPY, 2330"
           />
-          <ul v-if="showSearch && filteredDict.length > 0" class="absolute z-50 w-full bg-slate-800 border border-slate-600 rounded-md shadow-2xl top-[100%] mt-1 max-h-48 overflow-y-auto custom-scrollbar">
-            <li v-for="d in filteredDict" :key="d" @mousedown.prevent="selectStock(d)" class="p-2 hover:bg-indigo-600 cursor-pointer text-xs font-bold text-slate-200 border-b border-slate-700 last:border-0 truncate">{{ d }}</li>
+          <ul v-if="showSearch && filteredDict.length > 0" class="absolute z-50 w-full bg-gray-800 border border-gray-700 rounded-md shadow-2xl top-[100%] mt-1 max-h-48 overflow-y-auto custom-scrollbar">
+            <li v-for="d in filteredDict" :key="d" @mousedown.prevent="selectStock(d)" class="p-2 hover:bg-gray-700 cursor-pointer text-xs font-bold text-gray-200 border-b border-gray-700 last:border-0 truncate">{{ d }}</li>
           </ul>
         </label>
-        <label>
-          <span class="block text-[11px] text-slate-400 mb-1 font-bold">持有股數</span>
+        <label class="col-span-1 md:col-span-2 group">
+          <span class="block text-[10px] text-gray-500 mb-1.5 font-bold uppercase tracking-widest transition-colors group-focus-within:text-indigo-400">Shares</span>
           <input
             v-model.number="newStock.shares"
             type="number"
             min="1"
             step="1"
-            class="w-full rounded-lg bg-slate-200 text-slate-900 px-3 py-2 text-sm font-bold"
-            placeholder="股數"
+            class="w-full h-11 rounded-lg bg-gray-800 text-gray-100 px-3 text-sm font-bold font-mono tabular-nums border border-gray-700 focus:outline-none focus:border-indigo-500 focus:bg-gray-900 transition-all placeholder:text-gray-600 hide-spinners shadow-inner"
+            placeholder="Qty"
           />
         </label>
-        <label>
-          <span class="block text-[11px] text-slate-400 mb-1 font-bold">成本均價</span>
+        <label class="col-span-1 md:col-span-2 group">
+          <span class="block text-[10px] text-gray-500 mb-1.5 font-bold uppercase tracking-widest transition-colors group-focus-within:text-indigo-400">Avg Cost</span>
           <input
             v-model.number="newStock.costPrice"
             type="number"
             min="0"
             step="0.01"
-            class="w-full rounded-lg bg-slate-200 text-slate-900 px-3 py-2 text-sm font-bold"
-            placeholder="成本價"
+            class="w-full h-11 rounded-lg bg-gray-800 text-gray-100 px-3 text-sm font-bold font-mono tabular-nums border border-gray-700 focus:outline-none focus:border-indigo-500 focus:bg-gray-900 transition-all placeholder:text-gray-600 hide-spinners shadow-inner"
+            placeholder="Cost"
           />
         </label>
-        <label>
-          <span class="block text-[11px] text-slate-400 mb-1 font-bold">幣別</span>
+        <label class="col-span-1 md:col-span-2 group">
+          <span class="block text-[10px] text-gray-500 mb-1.5 font-bold uppercase tracking-widest transition-colors group-focus-within:text-indigo-400">Cur</span>
           <select
             v-model="newStock.currency"
-            class="w-full rounded-lg bg-slate-800 border border-slate-700 px-2 py-2 text-xs font-bold text-slate-200"
+            class="w-full h-11 rounded-lg bg-gray-800 px-3 text-xs font-bold text-gray-200 border border-gray-700 focus:outline-none focus:border-indigo-500 focus:bg-gray-900 transition-all appearance-none cursor-pointer shadow-inner"
           >
             <option value="USD">USD</option>
             <option value="TWD">TWD</option>
           </select>
         </label>
-        <button
-          @click="addStock"
-          class="self-end rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold px-3 py-2 hover:bg-indigo-500/35 transition-colors"
-        >
-          新增
-        </button>
+        <div class="col-span-2 md:col-span-2 flex items-end">
+          <button
+            @click="addStock"
+            class="w-full h-11 rounded-lg bg-indigo-600 text-white text-sm font-bold shadow-md shadow-indigo-900/40 hover:bg-indigo-500 hover:shadow-lg hover:-translate-y-[1px] transition-all tracking-wider active:scale-[0.98]"
+          >
+            Add
+          </button>
+        </div>
       </div>
     </section>
 
@@ -124,89 +126,70 @@
       </article>
     </section>
 
-    <section v-else class="space-y-0 bg-slate-900 rounded-xl border border-slate-800 overflow-visible shadow-lg shadow-black/10">
-      <div class="sticky top-[68px] z-20 flex bg-slate-900/95 backdrop-blur px-3 py-2.5 border-b border-slate-700 text-[11px] font-bold text-slate-300 tracking-wider shadow-sm items-center rounded-t-xl">
-        <div class="flex-[1.1] min-w-0">標的/總值 <span class="text-slate-500 font-normal ml-1">Symbol/Total</span></div>
-        <div class="flex-1 min-w-0 text-center">市價/均價 <span class="text-slate-500 font-normal ml-1">Price/Avg</span></div>
-        <div class="flex-1 min-w-0 text-right pr-6">損益 <span class="text-slate-500 font-normal ml-1">P&L</span></div>
+    <section v-else class="space-y-0 bg-[#0A0B0D] overflow-visible">
+      <!-- 移除原本厚重的 Header 與 Border，僅用 Typography 分隔 -->
+      <div class="flex justify-between items-end px-2 py-3 border-b border-gray-800/60">
+        <h2 class="text-lg font-bold text-gray-100 tracking-wide">Watchlist</h2>
+        <span class="text-[10px] text-gray-500 uppercase tracking-widest">Swipe to Delete</span>
       </div>
-      <p class="text-[11px] text-slate-400 px-3 py-2 border-b border-slate-800 bg-slate-950/50">提示：點擊右側垃圾桶可刪除標的。</p>
+
       <article
         v-for="item in dashboardRows"
         :key="item.key"
-        class="border-b border-slate-800/80 py-3 px-3 hover:bg-slate-800/40 transition-colors last:border-0"
+        class="border-b border-gray-800/40 py-3.5 px-2 hover:bg-gray-900/40 transition-colors active:bg-gray-800/60 cursor-pointer"
         @touchstart="handleTouchStart($event)"
         @touchend="handleTouchEnd($event, item.index)"
       >
-        <div class="flex items-center w-full gap-2">
-          <!-- 左欄：股票代碼、股數、市值、成本 -->
-          <div class="flex-[1.1] min-w-0 pr-1">
-            <p class="text-lg font-bold text-white truncate leading-tight">{{ item.symbol }}</p>
-            <p class="text-xs text-slate-400 font-mono-data tabular-nums mt-0.5 truncate">{{ formatShares(item.shares) }} 股</p>
-            
-            <div v-if="item.currentPrice !== null" class="mt-2 flex flex-col gap-0.5">
-              <p class="text-[10px] text-slate-300 font-mono-data tabular-nums truncate">
-                <span class="text-slate-500 mr-1">市值</span>{{ item.currencySymbol }}{{ formatNumber(item.marketValue) }}
-              </p>
-              <p class="text-[10px] text-slate-300 font-mono-data tabular-nums truncate">
-                <span class="text-slate-500 mr-1">成本</span>{{ item.currencySymbol }}{{ formatNumber(item.costTotal) }}
-              </p>
-            </div>
+        <div class="flex items-center justify-between w-full">
+          <!-- Left Column: Symbol & Shares -->
+          <div class="flex flex-col min-w-[80px]">
+            <span class="text-lg font-bold text-white leading-tight uppercase tracking-wide truncate">
+              {{ item.symbol }}
+            </span>
+            <span class="text-[11px] text-gray-400 font-mono tabular-nums mt-0.5 truncate">
+              {{ formatShares(item.shares) }} Shares
+            </span>
           </div>
 
-          <!-- 中欄：真實現價與均價 -->
-          <div class="flex-1 min-w-0 flex flex-col justify-center border-l border-slate-700/50 pl-3">
-            <div v-if="item.currentPrice === null" class="flex flex-col gap-1.5 py-1">
-              <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
-              <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
-            </div>
+          <!-- Middle Column: Current Price & Avg Price -->
+          <div class="flex flex-col items-end min-w-[90px]">
+            <template v-if="item.currentPrice === null">
+              <div class="h-4 w-12 bg-gray-800 animate-pulse rounded mb-1.5"></div>
+              <div class="h-3 w-10 bg-gray-800/50 animate-pulse rounded"></div>
+            </template>
             <template v-else>
-              <div class="flex items-center justify-between w-full pr-1">
-                <span class="text-[10px] text-indigo-400 font-bold shrink-0">市價</span>
-                <span class="text-sm font-mono-data tabular-nums font-medium text-white truncate">
-                  {{ item.currencySymbol }}{{ formatNumber(item.currentPrice) }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between w-full pr-1 mt-1.5">
-                <span class="text-[10px] text-slate-500 font-bold shrink-0">均價</span>
-                <span class="text-xs text-slate-400 font-mono-data tabular-nums truncate">
-                  {{ item.currencySymbol }}{{ formatNumber(item.costPrice) }}
-                </span>
-              </div>
+              <span class="text-[15px] font-bold text-gray-100 font-mono tabular-nums leading-tight tracking-tight">
+                {{ item.currencySymbol }} {{ formatNumber(item.currentPrice) }}
+              </span>
+              <span class="text-[11px] text-gray-500 mt-1 flex items-baseline gap-1">
+                <span class="uppercase tracking-widest opacity-60">Avg</span>
+                <span class="font-mono tabular-nums text-gray-400">{{ item.currencySymbol }} {{ formatNumber(item.costPrice) }}</span>
+              </span>
             </template>
           </div>
 
-          <!-- 右欄：損益金額、百分比、匯率貢獻 -->
-          <div class="flex-1 min-w-0 text-right flex flex-col justify-center pr-1 border-l border-slate-700/50 pl-2">
-            <div v-if="item.currentPrice === null" class="flex flex-col items-end gap-1.5 py-1">
-              <div class="h-4 w-16 bg-slate-700/50 animate-pulse rounded"></div>
-              <div class="h-3 w-12 bg-slate-800/50 animate-pulse rounded"></div>
-            </div>
+          <!-- Right Column: P&L Amount & Percentage -->
+          <div class="flex flex-col items-end min-w-[100px] text-right">
+            <template v-if="item.currentPrice === null">
+              <div class="h-4 w-16 bg-gray-800 animate-pulse rounded mb-1.5"></div>
+              <div class="h-3 w-12 bg-gray-800/50 animate-pulse rounded"></div>
+            </template>
             <template v-else>
-              <p class="text-[15px] font-mono-data tabular-nums font-bold truncate leading-tight" :class="profitClass(item.totalPnlTwd)">
+              <span 
+                class="text-[15px] font-bold font-mono tabular-nums leading-tight tracking-tight"
+                :class="item.totalPnlTwd >= 0 ? 'text-[#00C805]' : 'text-[#FF5000]'"
+              >
                 {{ item.totalPnlTwd >= 0 ? '+' : '' }}{{ formatNumber(item.totalPnlDisplay) }}
-              </p>
-              <p class="text-xs font-mono-data tabular-nums font-bold truncate mt-1" :class="profitClass(item.totalPnlTwd)">
+              </span>
+              <span 
+                class="mt-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold font-mono tabular-nums tracking-wide"
+                :class="item.totalPnlTwd >= 0 ? 'bg-[#00C805]/15 text-[#00C805]' : 'bg-[#FF5000]/15 text-[#FF5000]'"
+              >
                 {{ item.pnlPct >= 0 ? '+' : '' }}{{ item.pnlPct.toFixed(2) }}%
-              </p>
-              <p class="text-[9px] text-slate-500 font-mono-data tabular-nums mt-1.5 truncate bg-slate-800/50 inline-block px-1 rounded self-end">
-                匯差 {{ item.fxContributionTwd >= 0 ? '+' : '' }}{{ formatNumber(item.fxContributionTwd) }}
-              </p>
+              </span>
             </template>
           </div>
 
-          <!-- 極簡垃圾桶 Icon -->
-          <div class="shrink-0 pl-1">
-            <button
-              @click="removePosition(item.index)"
-              class="text-slate-600 hover:text-red-500 transition-colors p-1"
-              title="刪除標的"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
         </div>
       </article>
     </section>

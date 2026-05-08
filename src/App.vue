@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-slate-950 text-slate-100 p-4 md:p-8 font-sans min-h-screen">
-    <div id="app" class="max-w-[1600px] mx-auto space-y-6" @click="closeAllSearch">
+  <div class="bg-slate-950 text-slate-100 p-4 md:p-8 font-sans min-h-screen" @click="closeAllSearch">
+    <div id="app" class="max-w-[1600px] mx-auto space-y-6">
       <nav class="sticky top-3 z-30 bg-slate-900/90 border border-slate-800 rounded-2xl p-2 backdrop-blur-md shadow-lg">
         <div class="flex items-center gap-2">
           <button
@@ -25,8 +25,8 @@
       <header class="bg-slate-900 border-2 border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl shadow-black/20 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-5 items-stretch">
         <div class="w-full min-w-0 lg:col-span-4 bg-slate-950/55 rounded-2xl border border-slate-800/90 p-4 md:p-5">
           <div class="flex items-center justify-start gap-2 mb-3">
-            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">系統狀態：連線中</span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5" :class="isOnline ? 'bg-emerald-500' : 'bg-red-500'"></span>
+            <span class="text-xs font-bold uppercase tracking-widest" :class="isOnline ? 'text-emerald-400' : 'text-red-400'">系統狀態：{{ isOnline ? '連線中' : '離線' }}</span>
           </div>
           <h1 class="font-black text-white tracking-tight leading-[1.08] [font-size:clamp(2rem,3.2vw,3.25rem)] break-words">
             資產戰略總部 <span class="text-indigo-500 align-baseline">v8.3</span>
@@ -108,98 +108,135 @@
         </div>
       </header>
 
-      <div class="flex flex-col gap-5">        <!-- Bottom: Strategy List Area -->
-        <div class="bg-slate-900 rounded-xl border border-slate-800 shadow-lg overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-800 bg-slate-900/70 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-sm font-black text-indigo-400 uppercase tracking-widest italic">⚡ 再平衡戰略清單</h2>
+      <div class="flex flex-col gap-5">        
+        <!-- Top: Rebalancing Chart Area -->
+        <div class="bg-gray-900/30 rounded-xl border border-gray-800 p-4 flex flex-col items-center justify-center relative mt-2 shadow-sm">
+          <h2 class="absolute top-4 left-4 text-xs font-bold text-gray-500 uppercase tracking-widest z-10">Target Allocation</h2>
+          <div class="relative w-full flex items-center justify-center mt-2">
+            <div id="echart-container" class="w-full h-[220px] md:h-[300px]"></div>
+          </div>
+        </div>
+
+        <!-- Bottom: Strategy List Area -->
+        <div class="bg-transparent overflow-hidden">
+          <div class="px-2 py-3 border-b border-gray-800/60 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-lg font-bold text-gray-100 tracking-wide">Strategy Rebalance</h2>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold px-2 py-1 rounded" :class="isAllocationValid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'">
-                總目標: {{ totalTargetPct }}%
+              <span class="text-[11px] font-bold px-2 py-1 rounded" :class="isAllocationValid ? 'bg-[#00C805]/20 text-[#00C805]' : 'bg-[#FF5000]/20 text-[#FF5000]'">
+                Total Target: {{ totalTargetPct }}%
               </span>
-              <button @click="importDashboardPositions" class="text-[10px] px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-indigo-500/35 transition-colors font-bold whitespace-nowrap">
-                一鍵帶入部位
+              <button @click="importDashboardPositions" class="text-[11px] px-2.5 py-1 rounded-md bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/30 transition-colors font-bold whitespace-nowrap">
+                Sync Watchlist
               </button>
             </div>
           </div>
 
-          <div v-if="!isAllocationValid" class="bg-rose-950/40 border-b border-rose-900/50 p-3 text-center">
-            <p class="text-xs font-bold text-rose-400">⚠️ 總佔比為 {{ totalTargetPct }}%，必須等於 100% 才能啟動引擎。</p>
+          <div v-if="!isAllocationValid" class="bg-[#FF5000]/10 border-b border-[#FF5000]/30 p-3 text-center">
+            <p class="text-[11px] font-bold text-[#FF5000]">⚠️ Total target is {{ totalTargetPct }}%. Must equal 100% to calculate actions.</p>
           </div>
 
           <div class="flex flex-col">
             <template v-for="(group, gIdx) in [
-              { title: '💵 現金部位', items: [usdCash, twdCash] },
-              { title: '🛡️ 核心大盤', items: coreList, addRow: () => addRow('core'), removeRow: (idx) => removeRow('core', idx) },
-              { title: '🚀 戰略衛星', items: satelliteList, addRow: () => addRow('satellite'), removeRow: (idx) => removeRow('satellite', idx) }
+              { title: 'Cash', items: [usdCash, twdCash] },
+              { title: 'Core', items: coreList, addRow: () => addRow('core'), removeRow: (idx) => removeRow('core', idx) },
+              { title: 'Satellite', items: satelliteList, addRow: () => addRow('satellite'), removeRow: (idx) => removeRow('satellite', idx) }
             ]">
-              <div class="bg-slate-950/50 px-3 py-2 flex justify-between items-center border-b border-slate-800/80">
-                 <span class="text-[11px] font-black uppercase text-slate-400 tracking-wide">
-                    {{ group.title }} <span class="text-indigo-400 ml-1.5 tracking-wider">(目標總和: {{ group.items.reduce((s, i) => s + (parseFloat(i.target) || 0), 0) }}%)</span>
+              <div class="px-3 py-3 flex justify-between items-center border-b border-gray-800 bg-gray-900/40 mt-6 rounded-t-xl">
+                 <span class="text-[11px] font-bold uppercase text-gray-400 tracking-widest flex items-center gap-2">
+                    {{ group.title }} 
+                    <span class="text-indigo-400 px-2 py-0.5 bg-indigo-500/10 rounded-md tracking-wider">
+                      Target: {{ group.items.reduce((s, i) => s + (parseFloat(i.target) || 0), 0) }}%
+                    </span>
                  </span>
-                 <button v-if="group.addRow" @click="group.addRow()" class="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold px-2 py-0.5 rounded transition-colors bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30">+ 新增標的</button>
+                 <button v-if="group.addRow" @click="group.addRow()" class="flex items-center justify-center h-[32px] px-3 text-[11px] font-bold text-indigo-300 bg-indigo-500/15 border border-indigo-500/20 rounded-lg hover:bg-indigo-500/25 hover:text-indigo-200 transition-all active:scale-95">+ Add</button>
               </div>
               
-              <div v-for="(item, idx) in group.items" :key="gIdx + '-' + idx" class="flex flex-row flex-wrap md:flex-nowrap items-center border-b border-slate-800/80 py-3 px-3 hover:bg-slate-800/40 transition-colors bg-slate-900 group gap-3 md:gap-4">
+              <div v-for="(item, idx) in group.items" :key="gIdx + '-' + idx" class="grid grid-cols-12 gap-x-2 md:gap-x-4 gap-y-3 items-start border-b border-gray-800/40 py-3 px-2 hover:bg-gray-800/30 transition-colors bg-transparent group relative">
                 
                 <!-- 區塊 A: 標的名稱 -->
-                <div class="flex-[1] min-w-[90px] flex flex-col justify-center text-left">
-                   <div v-if="group.addRow && !item.fromDashboard" class="relative w-full mb-1">
-                     <input v-model="item.name" @input="onSearchInput(item)" @focus="item.showSearch = true" @click.stop class="w-[90%] bg-transparent text-lg font-black text-white placeholder-slate-500 focus:outline-none uppercase truncate leading-tight text-left border-b border-gray-600 focus:border-blue-500 pb-0.5 transition-colors" placeholder="代號/名稱">
-                     <ul v-if="item.showSearch && filteredDict(item.name).length > 0" class="absolute z-50 w-[150%] bg-slate-800 border border-slate-600 rounded-md shadow-2xl mt-1 max-h-48 overflow-y-auto custom-scrollbar text-left">
-                        <li v-for="d in filteredDict(item.name)" :key="d" @mousedown.prevent="selectStock(item, d)" class="p-2 hover:bg-indigo-600 cursor-pointer text-xs font-bold text-slate-200 border-b border-slate-700 last:border-0 truncate">{{ d }}</li>
+                <div class="col-span-12 md:col-span-3 lg:col-span-4 flex flex-col justify-start text-left">
+                   <!-- 隱形 Label 撐開高度，徹底解決空白 div 坍塌導致的錯位 -->
+                   <div class="text-[9px] font-bold uppercase tracking-widest opacity-0 select-none pointer-events-none mb-1 flex items-center">SYMBOL</div>
+                   <div v-if="group.addRow && !item.fromDashboard" class="relative w-full h-10">
+                     <input v-model="item.name" @input="onSearchInput(item)" @focus="item.showSearch = true" @click.stop class="w-full h-full bg-transparent text-lg font-bold text-white placeholder-gray-600 focus:outline-none uppercase truncate leading-tight px-2 rounded-md hover:bg-gray-800 focus:bg-gray-800 transition-colors" placeholder="SYMBOL">
+                     <ul v-if="item.showSearch && filteredDict(item.name).length > 0" class="absolute z-50 w-full min-w-[150px] bg-gray-800 border border-gray-700 rounded-lg shadow-2xl mt-1 max-h-48 overflow-y-auto custom-scrollbar text-left">
+                        <li v-for="d in filteredDict(item.name)" :key="d" @mousedown.prevent="selectStock(item, d)" class="p-2.5 hover:bg-gray-700 cursor-pointer text-xs font-bold text-gray-200 border-b border-gray-700 last:border-0 truncate">{{ d }}</li>
                      </ul>
                    </div>
-                   <div v-else class="text-lg font-black text-white truncate leading-tight mb-1">{{ item.name }}</div>
-                   <div class="text-[11px] text-slate-500 truncate" v-if="(item.name || '').includes('現金')">現金部位</div>
+                   <div v-else class="text-lg font-bold text-white truncate leading-tight px-2 h-10 flex items-center">{{ item.name }}</div>
+                   <div class="mt-1 text-[10px] text-gray-500 truncate px-2 tracking-wider uppercase font-bold flex items-center min-h-[16px]">
+                     <span v-if="(item.name || '').includes('現金')">Cash</span>
+                   </div>
                 </div>
 
-                <!-- 區塊 B: 當前市值 (沙盒輸入) -->
-                <div class="flex-[1] min-w-[100px] flex flex-col justify-center text-left border-l border-slate-700/50 pl-3">
-                   <div class="text-[10px] text-slate-500 mb-0.5">現有市值</div>
-                   <div class="flex items-center w-full pr-2">
-                      <span class="text-xs text-slate-400 mr-1 font-bold">{{ item.currency === 'USD' ? '$' : 'NT$' }}</span>
-                      <input type="number" v-model.number="item.current" @input="updateChart" class="w-full min-w-[60px] bg-transparent border-b border-gray-600 focus:border-blue-500 text-sm font-bold text-slate-300 font-mono-data tabular-nums focus:outline-none py-0.5 transition-colors hide-spinners">
+                <!-- 區塊 B: 當前市值 -->
+                <div class="col-span-4 md:col-span-3 lg:col-span-3 flex flex-col justify-start px-1">
+                   <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest pl-2 mb-1 flex items-center">Actual</div>
+                   <div class="w-full h-10 relative group/input bg-transparent hover:bg-gray-800/60 focus-within:bg-gray-800 rounded-md transition-colors flex items-center">
+                      <span class="absolute left-2 text-[12px] text-gray-400 font-mono tabular-nums font-bold pointer-events-none">{{ item.currency === 'USD' ? '$' : 'NT$' }}</span>
+                      <input type="number" v-model.number="item.current" @input="updateChart" class="w-full h-full bg-transparent pl-8 pr-2 text-sm font-bold text-gray-100 font-mono tabular-nums focus:outline-none hide-spinners">
                    </div>
+                   <!-- 底部空間 -->
+                   <div class="mt-1 min-h-[16px]"></div>
                 </div>
 
                 <!-- 區塊 C: 目標佔比輸入區 -->
-                <div class="flex-[1] min-w-[100px] flex flex-col items-center justify-center border-l border-slate-700/50 px-2">
-                   <div class="relative w-full max-w-[90px]">
-                      <input type="number" min="0" v-model.number="item.target" @input="validateTarget(item); updateChart()" class="w-full bg-slate-700 border-2 border-blue-500/50 rounded-md py-1.5 pl-2 pr-6 text-center font-mono-data tabular-nums font-bold text-white text-base focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all hide-spinners shadow-inner" placeholder="0">
-                      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 text-sm font-bold pointer-events-none">%</span>
+                <div class="col-span-4 md:col-span-3 lg:col-span-2 flex flex-col justify-start px-1">
+                   <div class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mb-1 flex items-center">Target %</div>
+                   <div class="w-full max-w-[85px] h-10 relative">
+                      <input type="number" min="0" v-model.number="item.target" @input="validateTarget(item); updateChart()" class="w-full h-full bg-gray-900/60 border border-gray-700 rounded-lg py-1 pl-2 pr-6 text-center font-mono tabular-nums font-bold text-white text-base focus:border-indigo-500 focus:bg-gray-800 focus:outline-none transition-all hide-spinners shadow-inner" :class="{ 'blur-sm text-transparent select-none': isPrivateMode }" placeholder="0">
+                      <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[11px] font-bold pointer-events-none">%</span>
                    </div>
-                   <div class="text-xs text-slate-400 mt-1.5 whitespace-nowrap">
-                      實際 <span class="font-mono-data font-bold text-slate-200">{{ getActualPct(item).toFixed(1) }}%</span>
+                   <div class="mt-1 text-[9px] text-gray-500 whitespace-nowrap tracking-widest uppercase font-bold flex items-center min-h-[16px]" :class="{ 'blur-sm select-none': isPrivateMode }">
+                      Curr: <span class="font-mono text-gray-400 ml-0.5">{{ getActualPct(item).toFixed(1) }}%</span>
                    </div>
                 </div>
 
                 <!-- 區塊 D: 行動指示 -->
-                <div class="flex-[1.2] min-w-[130px] flex flex-col items-end justify-center">
-                   <template v-if="isAllocationValid">
-                      <div v-if="getAction(item).type === 'BUY'" class="flex flex-col items-end">
-                         <span class="inline-block bg-emerald-600 text-white px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap font-mono-data tabular-nums shadow-sm">買入 {{ getAction(item).currencySymbol }}{{ formatAmount(getAction(item).amount) }}{{ getAction(item).mainCur === 'USD' ? ' USD' : '' }}</span>
-                         <span class="text-[10px] text-slate-400 mt-1 tabular-nums" v-if="getAction(item).tradeShares > 0">(約 {{ getAction(item).tradeShares }} 股)</span>
-                      </div>
-                      <div v-else-if="getAction(item).type === 'SELL'" class="flex flex-col items-end">
-                         <span class="inline-block bg-rose-600 text-white px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap font-mono-data tabular-nums shadow-sm">賣出 {{ getAction(item).currencySymbol }}{{ formatAmount(getAction(item).amount) }}{{ getAction(item).mainCur === 'USD' ? ' USD' : '' }}</span>
-                         <span class="text-[10px] text-slate-400 mt-1 tabular-nums" v-if="getAction(item).tradeShares > 0">(約 {{ getAction(item).tradeShares }} 股)</span>
-                      </div>
-                      <div v-else>
-                         <span class="inline-block text-slate-400 px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap bg-slate-800/80">無須動作</span>
-                      </div>
-                   </template>
-                   <template v-else>
-                      <span class="inline-block text-slate-500 px-2.5 py-1 rounded text-xs font-bold whitespace-nowrap border border-slate-700/50">等待啟動</span>
-                   </template>
+                <div class="col-span-4 md:col-span-2 lg:col-span-2 flex flex-col justify-start items-end pr-2">
+                   <!-- 隱形 Label -->
+                   <div class="text-[9px] font-bold uppercase tracking-widest opacity-0 select-none pointer-events-none mb-1 flex items-center">ACTION</div>
+                   <div class="h-10 flex items-center">
+                     <template v-if="isAllocationValid">
+                        <button v-if="getAction(item).type === 'BUY'" class="bg-[#00C805] text-white h-[32px] px-4 rounded-lg text-xs font-bold whitespace-nowrap tracking-wider shadow-md shadow-[#00C805]/20 hover:bg-[#00b304] active:scale-95 transition-all">
+                          Buy
+                        </button>
+                        <button v-else-if="getAction(item).type === 'SELL'" class="bg-[#FF5000] text-white h-[32px] px-4 rounded-lg text-xs font-bold whitespace-nowrap tracking-wider shadow-md shadow-[#FF5000]/20 hover:bg-[#e64800] active:scale-95 transition-all">
+                          Sell
+                        </button>
+                        <span v-else class="inline-flex items-center justify-center h-[32px] px-4 bg-gray-800 text-gray-400 rounded-lg text-xs font-bold whitespace-nowrap tracking-wider">
+                          Hold
+                        </span>
+                     </template>
+                     <template v-else>
+                        <span class="inline-flex items-center justify-center h-[28px] px-3 bg-red-500/10 text-red-400 rounded text-[10px] font-bold uppercase tracking-widest whitespace-nowrap">
+                          Invalid
+                        </span>
+                     </template>
+                   </div>
+                   <div class="mt-1 flex items-center justify-end w-full min-h-[16px]">
+                      <template v-if="isAllocationValid && getAction(item).type !== 'HOLD'">
+                         <span :class="getAction(item).type === 'BUY' ? 'text-[#00C805]' : 'text-[#FF5000]'" class="text-[11px] font-bold tabular-nums font-mono tracking-tight mr-1">
+                           {{ getAction(item).currencySymbol }}{{ formatAmount(getAction(item).amount) }}
+                         </span>
+                         <span class="text-[9px] text-gray-500 tabular-nums font-mono" :class="{ 'blur-sm select-none': isPrivateMode }" v-if="getAction(item).tradeShares > 0">
+                           ~{{ getAction(item).tradeShares }}shs
+                         </span>
+                      </template>
+                   </div>
                 </div>
 
                 <!-- 刪除按鈕 -->
-                <div class="shrink-0 flex items-center justify-center pl-1" v-if="group.removeRow">
-                   <button @click="group.removeRow(idx)" class="text-slate-600 hover:text-rose-500 p-2 md:p-3 transition-colors rounded-xl hover:bg-rose-500/10 active:bg-rose-500/20" title="刪除">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-6 md:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                     </svg>
-                   </button>
+                <div class="absolute right-2 top-3 md:static md:col-span-1 flex flex-col justify-start items-center" v-if="group.removeRow">
+                   <div class="text-[9px] font-bold uppercase tracking-widest opacity-0 select-none pointer-events-none mb-1 flex items-center hidden md:flex">DEL</div>
+                   <div class="h-10 flex items-center justify-center">
+                     <button @click="group.removeRow(idx)" class="flex items-center justify-center w-[40px] h-[40px] text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-xl active:scale-90 bg-gray-800/50 md:bg-transparent" title="Delete">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                       </svg>
+                     </button>
+                   </div>
+                   <div class="mt-1 min-h-[16px] hidden md:block"></div>
                 </div>
 
               </div>
@@ -219,16 +256,7 @@
             @toggle-private-mode="isPrivateMode = !isPrivateMode"
             :active="currentTab === 'dashboard'"
             @positions-updated="handleDashboardPositionsUpdated"
-          >
-            <template #chart>
-              <div class="bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-lg flex flex-col items-center justify-center relative mt-2">
-                <h2 class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-widest z-10">全球資產配置 <span class="text-slate-500 font-normal ml-1">Asset Allocation</span></h2>
-                <div class="relative w-full flex items-center justify-center mt-2">
-                  <div id="echart-container" class="w-full h-[220px] md:h-[300px]"></div>
-                </div>
-              </div>
-            </template>
-          </StockDashboard>
+          />
         </section>
       </transition>
       </div>
@@ -245,6 +273,7 @@ export default {
   data() {
     return {
       currentTab: 'dashboard',
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
       displayCurrency: 'TWD', // 全局計價幣別
       isPrivateMode: false, // 預設不開啟隱私模式
       heroAssetFontPx: 52, // 主標金額字級（px），由 fitHeroAssetAmount 依容器寬度調整
@@ -302,7 +331,8 @@ export default {
     getDisplayValue() {
       return (item) => {
         const twd = this.getTWDValue(item);
-        return this.displayCurrency === 'USD' ? twd / this.fx.currentRate : twd;
+        const rate = parseFloat(this.fx.currentRate);
+        return (this.displayCurrency === 'USD' && rate > 0) ? twd / rate : twd;
       };
     },
     totalAssetTWD() { 
@@ -315,7 +345,7 @@ export default {
       const all = [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList]; 
       return all.reduce((s, i) => s + (parseFloat(i.target) || 0), 0); 
     },
-    isAllocationValid() { return Math.abs(this.totalTargetPct - 100) < 0.01; },
+    isAllocationValid() { return Math.abs(this.totalTargetPct - 100) <= 0.01; },
     fxProfit() { 
       return this.totalAssetTWD - [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList].reduce((s, i) => s + (i.currency === 'USD' ? (parseFloat(i.current)||0) * this.fx.buyRate : (parseFloat(i.current)||0)), 0); 
     },
@@ -351,12 +381,14 @@ export default {
       }
     },
     currentTab(tab) {
-      if (tab === 'dashboard') {
+      if (tab === 'rebalancing' || tab === 'dashboard') {
         // Wait for the 200ms out-in transition to finish so the DOM element exists
         setTimeout(() => {
           this.$nextTick(() => {
-            this.initChart()
-            this.updateChart()
+            if (tab === 'rebalancing') {
+              this.initChart()
+              this.updateChart()
+            }
             this.scheduleFitHeroAssetAmount()
           })
         }, 250)
@@ -380,31 +412,31 @@ export default {
       if (item.target < 0) item.target = 0;
     },
     getActualPct(item) {
-      if (this.totalAssetTWD === 0) return 0;
+      if (this.totalAssetTWD <= 0) return 0;
       return (this.getTWDValue(item) / this.totalAssetTWD) * 100;
     },
     getAction(item) {
-      if (!this.isAllocationValid || this.totalAssetTWD === 0) return { type: 'HOLD' };
+      if (!this.isAllocationValid || this.totalAssetTWD <= 0) return { type: 'HOLD' };
       
-      const actualPct = this.getActualPct(item);
       const targetPct = parseFloat(item.target) || 0;
       
       const targetTWD = this.totalAssetTWD * (targetPct / 100);
       const currentTWD = this.getTWDValue(item);
       const gapTWD = targetTWD - currentTWD;
       
-      // 若誤差在 1% 內，視為無須動作
-      const type = Math.abs(actualPct - targetPct) <= 1.0 ? 'HOLD' : (gapTWD > 0 ? 'BUY' : 'SELL');
+      // 使用統一的 thresholdTWD 來判斷再平衡動作
+      const type = gapTWD >= this.thresholdTWD ? 'BUY' : (gapTWD <= -this.thresholdTWD ? 'SELL' : 'HOLD');
       
       const mainCur = item.currency;
-      const amountNative = mainCur === 'USD' ? (gapTWD / this.fx.currentRate) : gapTWD;
+      const rate = parseFloat(this.fx.currentRate) || 1;
+      const amountNative = mainCur === 'USD' ? (gapTWD / rate) : gapTWD;
       const currencySymbol = mainCur === 'USD' ? '$' : 'NT$';
       
       let tradeShares = null;
       if (item.shares && item.current > 0) {
         const pricePerShare = parseFloat(item.current) / parseFloat(item.shares);
         if (pricePerShare > 0) {
-          tradeShares = Math.floor(Math.abs(amountNative) / pricePerShare);
+          tradeShares = Math.round(Math.abs(amountNative) / pricePerShare);
         }
       }
       
@@ -612,17 +644,17 @@ export default {
     updateChart() {
       if(!this._chart) return;
       const data = [];
-      const colors = ['#3b82f6', '#60a5fa', '#818cf8', '#93c5fd', '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a'];
+      const colors = ['#00C805', '#24A0ED', '#818CF8', '#C084FC', '#FF5000', '#F59E0B', '#EAB308', '#64748B'];
       this.coreList.concat(this.satelliteList).forEach((i, idx) => { 
         const v = this.getDisplayValue(i); 
-        if(v > 0) data.push({ value: v, name: i.name || '未命名', itemStyle: { color: colors[idx % 8] } }); 
+        if(v > 0) data.push({ value: v, name: i.name || 'Unknown', itemStyle: { color: colors[idx % 8] } }); 
       });
-      if(this.getDisplayValue(this.usdCash) > 0) data.push({ value: this.getDisplayValue(this.usdCash), name: 'USD 現金', itemStyle: { color: '#0ea5e9' } });
-      if(this.getDisplayValue(this.twdCash) > 0) data.push({ value: this.getDisplayValue(this.twdCash), name: 'TWD 現金', itemStyle: { color: '#10b981' } });
+      if(this.getDisplayValue(this.usdCash) > 0) data.push({ value: this.getDisplayValue(this.usdCash), name: 'USD Cash', itemStyle: { color: '#24A0ED' } });
+      if(this.getDisplayValue(this.twdCash) > 0) data.push({ value: this.getDisplayValue(this.twdCash), name: 'TWD Cash', itemStyle: { color: '#00C805' } });
       const symbol = this.displayCurrency === 'USD' ? '$' : 'NT$';
       this._chart.setOption({ 
         tooltip: { trigger: 'item', formatter: `{b}<br/>${symbol} {c} ({d}%)` }, 
-        series: [{ type: 'pie', radius: ['35%', '60%'], label: { show: true, formatter: '{name|{b}}\n{perc|{d}%}', rich: { name: { color: '#f1f5f9', fontSize: 11, fontWeight: 'bold' }, perc: { color: '#94a3b8', fontSize: 10 } } }, data }] 
+        series: [{ type: 'pie', radius: ['35%', '60%'], label: { show: true, formatter: '{name|{b}}\n{perc|{d}%}', rich: { name: { color: '#E5E7EB', fontSize: 11, fontWeight: 'bold' }, perc: { color: '#9CA3AF', fontSize: 10 } } }, data }] 
       });
       this.save();
     },
@@ -655,12 +687,16 @@ export default {
      * 將當前資產狀態儲存至 localStorage
      */
     save() { 
-      localStorage.setItem('portfolio_v9_clean', JSON.stringify({ 
-        fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
-        coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})), 
-        satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})),
-        dashboardPositions: this.dashboardPositions.map(i => ({ name: i.name, currency: i.currency, current: i.current, cost: i.cost, shares: i.shares, lastPrice: i.lastPrice }))
-      })); 
+      try {
+        localStorage.setItem('portfolio_v9_clean', JSON.stringify({ 
+          fx: this.fx, thresholdTWD: this.thresholdTWD, usdCash: this.usdCash, twdCash: this.twdCash, 
+          coreList: this.coreList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})), 
+          satelliteList: this.satelliteList.map(i=>({name:i.name, currency:i.currency, current:i.current, cost:i.cost, shares:i.shares, target:i.target})),
+          dashboardPositions: this.dashboardPositions.map(i => ({ name: i.name, currency: i.currency, current: i.current, cost: i.cost, shares: i.shares, lastPrice: i.lastPrice }))
+        })); 
+      } catch (e) {
+        console.error('[Portfolio] Failed to save to localStorage:', e);
+      }
     },
     /**
      * 執行壓力測試
@@ -675,14 +711,20 @@ export default {
       };
       [this.usdCash, this.twdCash, ...this.coreList, ...this.satelliteList].forEach(randomize);
       this.updateChart();
-    }
+    },
+    handleOnline() { this.isOnline = true; },
+    handleOffline() { this.isOnline = false; }
   },
   created() {
     const saved = localStorage.getItem('portfolio_v9_clean');
     if(saved) { 
       try { 
         const p = JSON.parse(saved); 
-        Object.assign(this, p); 
+        // 防禦性拷貝：避免 XSS 污染 Vue 實體
+        const safeKeys = ['fx', 'thresholdTWD', 'usdCash', 'twdCash', 'coreList', 'satelliteList', 'dashboardPositions'];
+        safeKeys.forEach(k => {
+          if (p[k] !== undefined) this[k] = p[k];
+        });
         this.normalizePortfolioRows()
         if (!Array.isArray(this.dashboardPositions)) this.dashboardPositions = []
         if (!this.dashboardPositions.length) {
@@ -710,6 +752,8 @@ export default {
           this._heroAssetOnResize = () => this.scheduleFitHeroAssetAmount()
           window.addEventListener('resize', this._heroAssetOnResize, { passive: true })
         }
+        window.addEventListener('online', this.handleOnline);
+        window.addEventListener('offline', this.handleOffline);
         this.scheduleFitHeroAssetAmount()
       }, 50); 
     });
@@ -727,6 +771,8 @@ export default {
       window.removeEventListener('resize', this._heroAssetOnResize)
       this._heroAssetOnResize = null
     }
+    window.removeEventListener('online', this.handleOnline);
+    window.removeEventListener('offline', this.handleOffline);
   }
 }
 </script>
